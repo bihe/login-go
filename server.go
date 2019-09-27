@@ -110,9 +110,8 @@ func setupAPIServer() (*gin.Engine, string) {
 	// Recovery middleware recovers from any panics and writes a 500 if there was one.
 	r.Use(gin.Recovery())
 
-	// serving static content
-	r.Static("/ui", "./ui")
-	r.StaticFile("/favicon.ico", "./assets/favicon.ico")
+	// kind of central error handling (@see labstack echo!)
+	r.Use(core.ApplicationErrorReporter())
 
 	// API routes
 	version := core.VersionInfo{

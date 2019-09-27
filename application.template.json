@@ -1,10 +1,20 @@
 {
-    "database": {
-        "connectionString": "user:pass@tcp(10.0.0.1:3306)/mydms?parseTime=true"
-    },
-    "logging": {
-        "filePath": "/temp/file",
-        "requestPath": "/temp/requests",
-	    "logLevel": "debug"
-    }
+  "database": {
+    "connectionString": "user:pass@tcp(10.0.0.1:3306)/mydms?parseTime=true"
+  },
+  "logging": {
+    "filePath": "/temp/file",
+    "requestPath": "/temp/requests",
+    "logLevel": "debug"
+  },
+  "oidc": {
+    "clientID": "clientID",
+    "clientSecret": "clientSecret",
+    "redirectURL": "redirectURL",
+    "provider": "providerURL"
+  },
+  "session": {
+    "cookieName": "cookie",
+    "secret": "secret"
+  }
 }

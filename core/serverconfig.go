@@ -8,8 +8,10 @@ import (
 
 // Configuration holds the application configuration
 type Configuration struct {
-	DB  Database  `json:"database"`
-	Log LogConfig `json:"logging"`
+	DB      Database      `json:"database"`
+	Log     LogConfig     `json:"logging"`
+	OIDC    OAuthConfig   `json:"oidc"`
+	Session SessionConfig `json:"session"`
 }
 
 // Database defines the connection string
@@ -22,6 +24,20 @@ type LogConfig struct {
 	FilePath    string `json:"filePath"`
 	RequestPath string `json:"requestPath"`
 	LogLevel    string `json:"logLevel"`
+}
+
+// OAuthConfig is used to configure OAuth OpenID Connect
+type OAuthConfig struct {
+	ClientID     string `json:"clientID"`
+	ClientSecret string `json:"clientSecret"`
+	RedirectURL  string `json:"redirectURL"`
+	Provider     string `json:"provider"`
+}
+
+// SessionConfig configures cookie session storage
+type SessionConfig struct {
+	CookieName string `json:"cookieName"`
+	Secret     string `json:"secret"`
 }
 
 // GetSettings returns application configuration values

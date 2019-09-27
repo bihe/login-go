@@ -15,7 +15,17 @@ const configString = `{
 		"filePath": "/temp/file",
 		"requestPath": "/temp/request",
 		"logLevel": "debug"
-    }
+	},
+	"oidc": {
+		"clientID": "clientID",
+		"clientSecret": "clientSecret",
+		"redirectURL": "redirectURL"
+	},
+	"session": {
+		"cookieName": "cookie",
+		"secret": "secret",
+		"provider": "provider"
+	}
 }`
 
 // TestConfigReader reads config settings from json
@@ -31,4 +41,11 @@ func TestConfigReader(t *testing.T) {
 	assert.Equal(t, "/temp/file", config.Log.FilePath)
 	assert.Equal(t, "/temp/request", config.Log.RequestPath)
 	assert.Equal(t, "debug", config.Log.LogLevel)
+
+	assert.Equal(t, "clientID", config.OIDC.ClientID)
+	assert.Equal(t, "clientSecret", config.OIDC.ClientSecret)
+	assert.Equal(t, "redirectURL", config.OIDC.RedirectURL)
+
+	assert.Equal(t, "cookie", config.Session.CookieName)
+	assert.Equal(t, "secret", config.Session.Secret)
 }
