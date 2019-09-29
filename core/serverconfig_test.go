@@ -8,7 +8,16 @@ import (
 )
 
 const configString = `{
-    "database": {
+	"security": {
+		"jwtIssuer": "issuer",
+		"jwtSecret": "secret",
+		"expiry": 7,
+		"cookieName": "cookie",
+		"cookieDomain": "example.com",
+		"cookiePath": "/",
+		"cookieSecure": true
+	},
+	"database": {
 		"connectionString": "./bookmarks.db"
     },
     "logging": {
@@ -35,6 +44,14 @@ func TestConfigReader(t *testing.T) {
 	if err != nil {
 		t.Error("Could not read.", err)
 	}
+
+	assert.Equal(t, "issuer", config.Sec.JwtIssuer)
+	assert.Equal(t, 7, config.Sec.Expiry)
+	assert.Equal(t, "secret", config.Sec.JwtSecret)
+	assert.Equal(t, "cookie", config.Sec.CookieName)
+	assert.Equal(t, "example.com", config.Sec.CookieDomain)
+	assert.Equal(t, "/", config.Sec.CookiePath)
+	assert.Equal(t, true, config.Sec.CookieSecure)
 
 	assert.Equal(t, "./bookmarks.db", config.DB.ConnStr)
 

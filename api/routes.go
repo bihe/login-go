@@ -1,9 +1,12 @@
 package api
 
 import (
+	"fmt"
+
 	"github.com/bihe/login-go/api/appinfo"
 	"github.com/bihe/login-go/api/authoidc"
 	"github.com/bihe/login-go/core"
+	"github.com/bihe/login-go/persistence"
 	"github.com/gin-gonic/gin"
 
 	"github.com/gin-contrib/sessions"
@@ -11,7 +14,7 @@ import (
 )
 
 // RegisterRoutes defines the routes of the available handlers
-func RegisterRoutes(r *gin.Engine, config core.Configuration, version core.VersionInfo) (err error) {
+func RegisterRoutes(r *gin.Engine, config core.Configuration, version core.VersionInfo, con persistence.Connection) {
 	store := cookie.NewStore([]byte(config.Session.Secret))
 	r.Use(sessions.Sessions(config.Session.CookieName, store))
 
@@ -22,7 +25,11 @@ func RegisterRoutes(r *gin.Engine, config core.Configuration, version core.Versi
 
 	// oidc handling
 	r.LoadHTMLFiles("templates/error.tmpl")
-	oidcH := authoidc.NewHandler(version, config.OIDC)
+	repo, err := persistence.NewRepository(con)
+	if err != nil {
+		panic(fmt.Sprintf("could not create a repository: %v", err))
+	}
+	oidcH := authoidc.NewHandler(version, config.OIDC, config.Sec, repo)
 	r.GET("/oidc", oidcH.GetRedirect)
 	r.GET("/signin-oidc", oidcH.Signin)
 	r.GET("/error", oidcH.Error)
@@ -32,6 +39,4 @@ func RegisterRoutes(r *gin.Engine, config core.Configuration, version core.Versi
 
 	aih := &appinfo.Handler{VersionInfo: version}
 	api.GET("/appinfo", aih.GetAppInfo)
-
-	return nil
 }

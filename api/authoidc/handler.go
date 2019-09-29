@@ -2,19 +2,21 @@ package authoidc
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/base64"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
 	oidc "github.com/coreos/go-oidc"
 	"github.com/gin-contrib/sessions"
+	"github.com/google/uuid"
 	"golang.org/x/oauth2"
 
 	"github.com/bihe/login-go/core"
+	"github.com/bihe/login-go/persistence"
+	"github.com/bihe/login-go/security"
 	"github.com/gin-gonic/gin"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // --------------------------------------------------------------------------
@@ -28,6 +30,41 @@ const idTokenParam = "id_token"
 var openIDScope = []string{oidc.ScopeOpenID, "profile", "email"}
 
 // --------------------------------------------------------------------------
+// OIDC wrapping
+// --------------------------------------------------------------------------
+
+// OIDCToken wraps the underlying implementation of oidc-token
+type OIDCToken interface {
+	GetClaims(v interface{}) error
+}
+
+type oidcToken struct {
+	*oidc.IDToken
+}
+
+// GetClaims returns the token claims
+func (t *oidcToken) GetClaims(v interface{}) error {
+	return t.Claims(v)
+}
+
+// OIDCVerifier wraps the underlying implementation of oidc-verify
+type OIDCVerifier interface {
+	VerifyToken(ctx context.Context, rawToken string) (OIDCToken, error)
+}
+
+type oidcVerifier struct {
+	*oidc.IDTokenVerifier
+}
+
+func (v *oidcVerifier) VerifyToken(ctx context.Context, rawToken string) (OIDCToken, error) {
+	t, err := v.Verify(ctx, rawToken)
+	if err != nil {
+		return nil, err
+	}
+	return &oidcToken{t}, nil
+}
+
+// --------------------------------------------------------------------------
 // the Handler
 // --------------------------------------------------------------------------
 
@@ -37,13 +74,20 @@ type Handler struct {
 	config core.OAuthConfig
 	// oauth / oidc related
 	oauthConfig   oauth2.Config
-	oauthVerifier *oidc.IDTokenVerifier
+	oauthVerifier OIDCVerifier
+	// store
+	repo persistence.Repository
+	// jwt logic
+	jwt core.Security
 }
 
 // NewHandler creates a new instance of the OIDC handler
-func NewHandler(v core.VersionInfo, c core.OAuthConfig) *Handler {
+func NewHandler(v core.VersionInfo, c core.OAuthConfig, s core.Security, repo persistence.Repository) *Handler {
 	h := Handler{config: c}
 	h.VersionInfo = v
+	h.repo = repo
+	h.jwt = s
+
 	ctx := context.Background()
 	provider, err := oidc.NewProvider(ctx, c.Provider)
 	if err != nil {
@@ -52,7 +96,8 @@ func NewHandler(v core.VersionInfo, c core.OAuthConfig) *Handler {
 	oidcConfig := &oidc.Config{
 		ClientID: c.ClientID,
 	}
-	h.oauthVerifier = provider.Verifier(oidcConfig)
+	ver := provider.Verifier(oidcConfig)
+	h.oauthVerifier = &oidcVerifier{ver}
 	h.oauthConfig = oauth2.Config{
 		ClientID:     c.ClientID,
 		ClientSecret: c.ClientSecret,
@@ -79,6 +124,7 @@ func (h *Handler) Signin(c *gin.Context) {
 
 	// read the stateParam again
 	state := s.Get(stateParam)
+	log.Debugf("got state param: %s", state)
 
 	if c.Query(stateParam) != state {
 		c.Error(core.BadRequestError{Err: fmt.Errorf("state did not match"), Request: c.Request})
@@ -98,13 +144,13 @@ func (h *Handler) Signin(c *gin.Context) {
 		c.Error(core.ServerError{Err: fmt.Errorf("no id_token field in oauth2 token"), Request: c.Request})
 		return
 	}
-	idToken, err := h.oauthVerifier.Verify(ctx, rawIDToken)
+	idToken, err := h.oauthVerifier.VerifyToken(ctx, rawIDToken)
 	if err != nil {
-		c.Error(core.ServerError{Err: fmt.Errorf("filed to verify ID Token: %v", err), Request: c.Request})
+		c.Error(core.ServerError{Err: fmt.Errorf("failed to verify ID Token: %v", err), Request: c.Request})
 		return
 	}
 
-	var claims struct {
+	var oidcClaims struct {
 		Email         string `json:"email"`
 		EmailVerified bool   `json:"email_verified"`
 		DisplayName   string `json:"name"`
@@ -115,20 +161,69 @@ func (h *Handler) Signin(c *gin.Context) {
 		UserID        string `json:"sub"`
 	}
 
-	if err := idToken.Claims(&claims); err != nil {
+	if err := idToken.GetClaims(&oidcClaims); err != nil {
 		c.Error(core.ServerError{Err: fmt.Errorf("claims error: %v", err), Request: c.Request})
 		return
 	}
 
-	// TODO: verify the claims
-	// on success create token and forward to / or to provided redirect URL
-	// on error redirect to /error
+	// the user was authenticated successfully, check if sites are available for the given user!
+	success := true
+	sites, err := h.repo.GetSitesByUser(oidcClaims.Email)
+	if err != nil {
+		log.Warnf("successfull login by '%s' but error fetching sites! %v", oidcClaims.Email, err)
+		success = false
+	}
 
-	s.AddFlash(claims.DisplayName, core.FlashKeyError)
-	s.Save()
-	c.Redirect(http.StatusTemporaryRedirect, "/error")
+	if sites == nil || len(sites) == 0 {
+		log.Warnf("successfull login by '%s' but no sites availabel!", oidcClaims.Email)
+		success = false
+	}
 
-	//c.JSON(http.StatusOK, claims)
+	if !success {
+		// save a flash message in the session.store
+		s.AddFlash(fmt.Sprintf("User '%s' is not allowed to login!", oidcClaims.Email), core.FlashKeyError)
+		s.Save()
+
+		c.Abort()
+		c.Redirect(http.StatusTemporaryRedirect, "/error")
+		return
+	}
+
+	// create the token
+	var siteClaims []string
+	for _, s := range sites {
+		siteClaims = append(siteClaims, fmt.Sprintf("%s|%s|%s", s.Name, s.URL, s.PermList))
+	}
+	claims := security.Claims{
+		Type:        "login.User",
+		DisplayName: oidcClaims.DisplayName,
+		Email:       oidcClaims.Email,
+		UserID:      oidcClaims.UserID,
+		UserName:    oidcClaims.Email,
+		GivenName:   oidcClaims.GivenName,
+		Surname:     oidcClaims.FamilyName,
+		Claims:      siteClaims,
+	}
+	token, err := security.CreateToken(h.jwt.JwtIssuer, []byte(h.jwt.JwtSecret), h.jwt.Expiry, claims)
+	if err != nil {
+		log.Errorf("could not create a JWT token: %v", err)
+		c.Error(core.ServerError{Err: fmt.Errorf("error creating JWT: %v", err), Request: c.Request})
+		return
+	}
+
+	// set the cookie
+	exp := h.jwt.Expiry * 24 * 3600
+	c.SetCookie(h.jwt.CookieName,
+		token,
+		exp, /* exp in seconds */
+		h.jwt.CookiePath,
+		h.jwt.CookieDomain,
+		h.jwt.CookieSecure,
+		true /* http-only */)
+
+	// redirect to provided URL
+	c.Redirect(http.StatusTemporaryRedirect, "/")
+
 }
 
 // Error returns a HTML template showing errors
@@ -167,9 +262,7 @@ func (h *Handler) Error(c *gin.Context) {
 	})
 }
 
-// https://skarlso.github.io/2016/06/12/google-signin-with-go/
 func randToken() string {
-	b := make([]byte, 32)
-	rand.Read(b)
-	return base64.StdEncoding.EncodeToString(b)
+	u := uuid.New()
+	return u.String()
 }

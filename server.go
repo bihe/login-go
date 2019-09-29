@@ -11,8 +11,11 @@ import (
 	"syscall"
 	"time"
 
+	_ "github.com/go-sql-driver/mysql"
+
 	"github.com/bihe/login-go/api"
 	"github.com/bihe/login-go/core"
+	"github.com/bihe/login-go/persistence"
 	"github.com/gin-gonic/gin"
 )
 
@@ -113,13 +116,14 @@ func setupAPIServer() (*gin.Engine, string) {
 	// kind of central error handling (@see labstack echo!)
 	r.Use(core.ApplicationErrorReporter())
 
-	// API routes
+	// persistence store && application version
 	version := core.VersionInfo{
 		Version: Version,
 		Build:   Build,
 		Runtime: Runtime,
 	}
-	api.RegisterRoutes(r, c, version)
+	con := persistence.NewConn(c.DB.ConnStr)
+	api.RegisterRoutes(r, c, version, con)
 
 	return r, fmt.Sprintf("%s:%d", args.HostName, args.Port)
 }

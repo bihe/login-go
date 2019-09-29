@@ -12,6 +12,7 @@ import (
 )
 
 func TestGetAppInfo(t *testing.T) {
+	gin.SetMode(gin.TestMode)
 	r := gin.Default()
 
 	version := core.VersionInfo{

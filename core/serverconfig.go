@@ -8,10 +8,22 @@ import (
 
 // Configuration holds the application configuration
 type Configuration struct {
+	Sec     Security      `json:"security"`
 	DB      Database      `json:"database"`
 	Log     LogConfig     `json:"logging"`
 	OIDC    OAuthConfig   `json:"oidc"`
 	Session SessionConfig `json:"session"`
+}
+
+// Security settings for the application
+type Security struct {
+	JwtIssuer    string `json:"jwtIssuer"`
+	JwtSecret    string `json:"jwtSecret"`
+	Expiry       int    `json:"expiry"`
+	CookieName   string `json:"cookieName"`
+	CookieDomain string `json:"cookieDomain"`
+	CookiePath   string `json:"cookiePath"`
+	CookieSecure bool   `json:"cookieSecure"`
 }
 
 // Database defines the connection string
