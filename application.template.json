@@ -6,7 +6,14 @@
 		"cookieName": "cookie",
     "cookieDomain": "example.com",
     "cookiePath": "/",
-		"cookieSecure": true
+    "cookieSecure": true,
+    "claim": {
+      "name": "login",
+      "url": "http://localhost:3000",
+      "roles": ["User", "Admin"]
+    },
+    "cacheDuration": "10m",
+    "loginRedirect": "/"
 	},
   "database": {
     "connectionString": "user:pass@tcp(10.0.0.1:3306)/mydms?parseTime=true"

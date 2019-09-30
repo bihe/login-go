@@ -17,13 +17,23 @@ type Configuration struct {
 
 // Security settings for the application
 type Security struct {
-	JwtIssuer    string `json:"jwtIssuer"`
-	JwtSecret    string `json:"jwtSecret"`
-	Expiry       int    `json:"expiry"`
-	CookieName   string `json:"cookieName"`
-	CookieDomain string `json:"cookieDomain"`
-	CookiePath   string `json:"cookiePath"`
-	CookieSecure bool   `json:"cookieSecure"`
+	JwtIssuer     string `json:"jwtIssuer"`
+	JwtSecret     string `json:"jwtSecret"`
+	Expiry        int    `json:"expiry"`
+	CookieName    string `json:"cookieName"`
+	CookieDomain  string `json:"cookieDomain"`
+	CookiePath    string `json:"cookiePath"`
+	CookieSecure  bool   `json:"cookieSecure"`
+	Claim         Claim  `json:"claim"`
+	CacheDuration string `json:"cacheDuration"`
+	LoginRedirect string `json:"loginRedirect"`
+}
+
+// Claim defines the required claims
+type Claim struct {
+	Name  string   `json:"name"`
+	URL   string   `json:"url"`
+	Roles []string `json:"roles"`
 }
 
 // Database defines the connection string

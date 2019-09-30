@@ -15,7 +15,14 @@ const configString = `{
 		"cookieName": "cookie",
 		"cookieDomain": "example.com",
 		"cookiePath": "/",
-		"cookieSecure": true
+		"cookieSecure": true,
+		"claim": {
+            "name": "login",
+            "url": "http://localhost:3000",
+            "roles": ["User", "Admin"]
+		},
+		"cacheDuration": "10m",
+		"loginRedirect": "http://localhost:3000"
 	},
 	"database": {
 		"connectionString": "./bookmarks.db"
@@ -52,6 +59,11 @@ func TestConfigReader(t *testing.T) {
 	assert.Equal(t, "example.com", config.Sec.CookieDomain)
 	assert.Equal(t, "/", config.Sec.CookiePath)
 	assert.Equal(t, true, config.Sec.CookieSecure)
+	assert.Equal(t, "10m", config.Sec.CacheDuration)
+	assert.Equal(t, "http://localhost:3000", config.Sec.LoginRedirect)
+	assert.Equal(t, "login", config.Sec.Claim.Name)
+	assert.Equal(t, "http://localhost:3000", config.Sec.Claim.URL)
+	assert.Equal(t, []string{"User", "Admin"}, config.Sec.Claim.Roles)
 
 	assert.Equal(t, "./bookmarks.db", config.DB.ConnStr)
 

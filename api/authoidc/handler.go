@@ -118,6 +118,9 @@ func (h *Handler) GetRedirect(c *gin.Context) {
 }
 
 // Signin performs the login/authentication of the OIDC context
+// the user of the external authentication provider is checked against
+// the database. If a match is found a token with the valid claims is created
+// and a redirect is made to the defined URL
 func (h *Handler) Signin(c *gin.Context) {
 	s := sessions.Default(c)
 	ctx := context.Background()
@@ -189,7 +192,7 @@ func (h *Handler) Signin(c *gin.Context) {
 		return
 	}
 
-	// create the token
+	// create the token using the claims of the database
 	var siteClaims []string
 	for _, s := range sites {
 		siteClaims = append(siteClaims, fmt.Sprintf("%s|%s|%s", s.Name, s.URL, s.PermList))
@@ -222,7 +225,7 @@ func (h *Handler) Signin(c *gin.Context) {
 		true /* http-only */)
 
 	// redirect to provided URL
-	c.Redirect(http.StatusTemporaryRedirect, "/")
+	c.Redirect(http.StatusTemporaryRedirect, h.jwt.LoginRedirect)
 
 }
 

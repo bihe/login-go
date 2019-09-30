@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/markusthoemmes/goautoneg"
 
@@ -130,6 +131,17 @@ func ErrServerError(err ServerError) *ProblemDetail {
 	}
 }
 
+// ErrRedirectError returns a http.StatusTemporaryRedirect
+func ErrRedirectError(err RedirectError) *ProblemDetail {
+	return &ProblemDetail{
+		Type:     t,
+		Title:    "a redirect is necessary",
+		Status:   err.Status,
+		Detail:   err.Error(),
+		Instance: err.URL,
+	}
+}
+
 // --------------------------------------------------------------------------
 // Error handling middleware
 // --------------------------------------------------------------------------
@@ -152,7 +164,7 @@ func errorReporter(errType gin.ErrorType) gin.HandlerFunc {
 		log.Debugf("will handle application errors!")
 
 		var e *ProblemDetail
-		// content := negotiateContent(c)
+		content := negotiateContent(c)
 
 		if len(detectedErrors) > 0 {
 			err := detectedErrors[0].Err
@@ -168,6 +180,26 @@ func errorReporter(errType gin.ErrorType) gin.HandlerFunc {
 				e = ErrBadRequest(badrequest)
 				c.JSON(e.Status, e)
 				c.Abort()
+				return
+			}
+
+			if redirect, ok := err.(RedirectError); ok {
+				e = ErrRedirectError(redirect)
+				switch content {
+				case HTML:
+					s := sessions.Default(c)
+					s.AddFlash(e.Detail, FlashKeyError)
+					s.Save()
+					c.Redirect(http.StatusTemporaryRedirect, redirect.URL)
+					break
+				default:
+					status := http.StatusTemporaryRedirect
+					if e.Status > 0 {
+						status = e.Status
+					}
+					c.JSON(status, e)
+					break
+				}
 				return
 			}
 
