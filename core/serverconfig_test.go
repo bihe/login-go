@@ -37,10 +37,11 @@ const configString = `{
 		"clientSecret": "clientSecret",
 		"redirectURL": "redirectURL"
 	},
-	"session": {
-		"cookieName": "cookie",
-		"secret": "secret",
-		"provider": "provider"
+	"appCookies": {
+		"domain": "example.com",
+		"path": "/",
+		"secure": true,
+		"prefix": "prefix"
 	}
 }`
 
@@ -75,6 +76,8 @@ func TestConfigReader(t *testing.T) {
 	assert.Equal(t, "clientSecret", config.OIDC.ClientSecret)
 	assert.Equal(t, "redirectURL", config.OIDC.RedirectURL)
 
-	assert.Equal(t, "cookie", config.Session.CookieName)
-	assert.Equal(t, "secret", config.Session.Secret)
+	assert.Equal(t, "example.com", config.AppCookies.Domain)
+	assert.Equal(t, "/", config.AppCookies.Path)
+	assert.Equal(t, "prefix", config.AppCookies.Prefix)
+	assert.Equal(t, true, config.AppCookies.Secure)
 }

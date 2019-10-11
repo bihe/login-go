@@ -12,8 +12,7 @@ import (
 
 	"github.com/bihe/login-go/core"
 	"github.com/bihe/login-go/persistence"
-	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/cookie"
+	"github.com/bihe/login-go/security"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/oauth2"
@@ -91,6 +90,13 @@ func (v *mockVerifier) VerifyToken(ctx context.Context, rawToken string) (OIDCTo
 	return &mockToken{v.failToken}, nil
 }
 
+var cookieSettings = core.CookieSettings{
+	Domain: "localhost",
+	Path:   "/",
+	Secure: false,
+	Prefix: "test",
+}
+
 func GetHandler() *Handler {
 	version := core.VersionInfo{
 		Version: "1",
@@ -113,7 +119,7 @@ func GetHandler() *Handler {
 		CookieSecure: false,
 	}
 
-	return NewHandler(version, oauth, sec, &mockRepository{})
+	return NewHandler(version, oauth, sec, cookieSettings, &mockRepository{})
 }
 
 // --------------------------------------------------------------------------
@@ -162,6 +168,14 @@ func (m *mockRepository) StoreLogin(login persistence.Login, a persistence.Atomi
 // test methods
 // --------------------------------------------------------------------------
 
+const state = "S"
+const stateCookieName = "test_" + stateParam
+const authFlowCookieName = "test_" + authFlowCookie
+const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE5NzE0MDkyNzQsImp0aSI6IjUwN2MwZjRhLThmMGYtNDZlMC1kZGRkLTM3NDZmOTExMmQ1ZSIsImlhdCI6MTQ3MDgwNDQ3NCwiaXNzIjoiaXNzdWVyIiwic3ViIjoiYS5iQGMuZGUiLCJUeXBlIjoibG9naW4uVXNlciIsIkRpc3BsYXlOYW1lIjoiTmFtZSIsIkVtYWlsIjoiYS5iQGMuZGUiLCJVc2VySWQiOiIxMjM0IiwiVXNlck5hbWUiOiJhYmMiLCJHaXZlbk5hbWUiOiJhIiwiU3VybmFtZSI6ImIiLCJDbGFpbXMiOlsiY2xhaW18aHR0cDovL2xvY2FsaG9zdDozMDAwfHJvbGUiXX0.oRsKGYJhO2Fe972TgRn65AbMqCHAghxBA4qN5IQFYkw"
+const signIn = "/signin"
+const signInURL = "/signin?%s=%s"
+const errorPath = "/error"
+
 func TestNewHandler(t *testing.T) {
 	h := GetHandler()
 	if h == nil {
@@ -172,8 +186,6 @@ func TestNewHandler(t *testing.T) {
 func TestOIDCRedirect(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.Default()
-	store := cookie.NewStore([]byte("secret"))
-	r.Use(sessions.Sessions("cookie", store))
 
 	h := GetHandler()
 	r.GET("/oidc", h.GetRedirect)
@@ -195,13 +207,74 @@ func TestOIDCRedirect(t *testing.T) {
 	assert.Equal(t, "openid profile email", u.Query().Get("scope"))
 }
 
+func TestGetAuthFlow(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	r := gin.Default()
+
+	h := GetHandler()
+	r.GET("/auth/flow", h.AuthFlow)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", fmt.Sprintf("/auth/flow?%s=s&%s=r", siteParam, redirectParam), nil)
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusFound, w.Code)
+	l := w.Header().Get("Location")
+	u, err := url.Parse(l)
+	if err != nil {
+		t.Errorf("could not parse url: %v", err)
+	}
+
+	assert.Equal(t, "accounts.google.com", u.Hostname())
+	assert.Equal(t, "CLIENTID", u.Query().Get("client_id"))
+	assert.Equal(t, "http://localhost", u.Query().Get("redirect_uri"))
+	assert.Equal(t, "openid profile email", u.Query().Get("scope"))
+}
+
+var jwtOpts = security.JwtOptions{
+	JwtSecret:  "secret",
+	JwtIssuer:  "issuer",
+	CookieName: "cookie",
+	RequiredClaim: security.Claim{
+		Name:  "claim",
+		URL:   "http://localhost:3000",
+		Roles: []string{"role"},
+	},
+	RedirectURL:   "/redirect",
+	CacheDuration: "10m",
+}
+
+func TestLogout(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	logout := "/logout"
+
+	rec := httptest.NewRecorder()
+	c, r := gin.CreateTestContext(rec)
+
+	// setup middleware
+	r.Use(security.JWTMiddleware(jwtOpts))
+
+	// request
+	h := GetHandler()
+	r.GET(logout, h.Logout)
+	req := httptest.NewRequest(http.MethodGet, logout, nil)
+	req.AddCookie(&http.Cookie{Name: "cookie", Value: token})
+	c.Request = req
+
+	r.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusTemporaryRedirect, rec.Code)
+	l := rec.Header().Get("Location")
+	if l != errorPath {
+		t.Errorf("wrong redirect to error page")
+	}
+
+}
+
 func TestOIDCSignin(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.Default()
-	store := cookie.NewStore([]byte("secret"))
-	r.Use(sessions.Sessions("cookie", store))
-	r.Use(core.ApplicationErrorReporter())
-	state := "S"
+	r.Use(core.ApplicationErrorReporter(cookieSettings))
 
 	testSrv, closeSrv := setupMockOAuthServer()
 	defer func() {
@@ -213,31 +286,59 @@ func TestOIDCSignin(t *testing.T) {
 	h.oauthConfig = *oauthConf
 	h.oauthVerifier = &mockVerifier{}
 
-	r.Use(func(c *gin.Context) {
-		s := sessions.Default(c)
-		s.Set(stateParam, state)
-		s.Save()
-	})
-	r.GET("/signin", h.Signin)
+	r.GET(signIn, h.Signin)
 
 	rec := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(rec)
-	url := fmt.Sprintf("/signin?%s=%s", stateParam, state)
+	url := fmt.Sprintf(signInURL, stateParam, state)
 
-	c.Request = httptest.NewRequest(http.MethodGet, url, nil)
+	req := httptest.NewRequest(http.MethodGet, url, nil)
+	c.Request = req
+	req.AddCookie(&http.Cookie{Name: stateCookieName, Value: state})
 
 	r.ServeHTTP(rec, c.Request)
 
 	assert.Equal(t, http.StatusTemporaryRedirect, rec.Code)
 }
 
+func TestOIDCSigninAuthFlow(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	r := gin.Default()
+	r.Use(core.ApplicationErrorReporter(cookieSettings))
+
+	testSrv, closeSrv := setupMockOAuthServer()
+	defer func() {
+		closeSrv()
+	}()
+
+	redirectURL := "/customRedirect"
+
+	h := GetHandler()
+	oauthConf := newOAuthConf(testSrv.URL)
+	h.oauthConfig = *oauthConf
+	h.oauthVerifier = &mockVerifier{}
+
+	r.GET(signIn, h.Signin)
+
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	url := fmt.Sprintf(signInURL, stateParam, state)
+
+	req := httptest.NewRequest(http.MethodGet, url, nil)
+	c.Request = req
+	req.AddCookie(&http.Cookie{Name: stateCookieName, Value: state})
+	req.AddCookie(&http.Cookie{Name: authFlowCookieName, Value: fmt.Sprintf("%s%s%s", "site", authFlowSep, redirectURL)})
+
+	r.ServeHTTP(rec, c.Request)
+
+	assert.Equal(t, http.StatusTemporaryRedirect, rec.Code)
+	assert.Equal(t, redirectURL, rec.Header().Get("Location"))
+}
+
 func TestOIDCSigninFailRepo(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.Default()
-	store := cookie.NewStore([]byte("secret"))
-	r.Use(sessions.Sessions("cookie", store))
-	r.Use(core.ApplicationErrorReporter())
-	state := "S"
+	r.Use(core.ApplicationErrorReporter(cookieSettings))
 
 	testSrv, closeSrv := setupMockOAuthServer()
 	defer func() {
@@ -250,33 +351,27 @@ func TestOIDCSigninFailRepo(t *testing.T) {
 	h.oauthVerifier = &mockVerifier{}
 	h.repo = &mockRepository{true}
 
-	r.Use(func(c *gin.Context) {
-		s := sessions.Default(c)
-		s.Set(stateParam, state)
-		s.Save()
-	})
-	r.GET("/signin", h.Signin)
+	r.GET(signIn, h.Signin)
 
 	rec := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(rec)
-	url := fmt.Sprintf("/signin?%s=%s", stateParam, state)
+	url := fmt.Sprintf(signInURL, stateParam, state)
 
-	c.Request = httptest.NewRequest(http.MethodGet, url, nil)
+	req := httptest.NewRequest(http.MethodGet, url, nil)
+	c.Request = req
+	req.AddCookie(&http.Cookie{Name: stateCookieName, Value: state})
 
 	r.ServeHTTP(rec, c.Request)
 
-	assert.Equal(t, "/error", rec.Header().Get("Location"))
+	assert.Equal(t, errorPath, rec.Header().Get("Location"))
 	assert.Equal(t, http.StatusTemporaryRedirect, rec.Code)
 }
 
 func TestOIDCSigninFailState(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.Default()
-	store := cookie.NewStore([]byte("secret"))
-	r.Use(sessions.Sessions("cookie", store))
-	r.Use(core.ApplicationErrorReporter())
-	state := "S"
-	url := "/signin"
+	r.Use(core.ApplicationErrorReporter(cookieSettings))
+	url := signIn
 
 	testSrv, closeSrv := setupMockOAuthServer()
 	defer func() {
@@ -288,16 +383,13 @@ func TestOIDCSigninFailState(t *testing.T) {
 	h.oauthConfig = *oauthConf
 	h.oauthVerifier = &mockVerifier{}
 
-	r.Use(func(c *gin.Context) {
-		s := sessions.Default(c)
-		s.Set(stateParam, state)
-		s.Save()
-	})
 	r.GET(url, h.Signin)
 
 	rec := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(rec)
-	c.Request = httptest.NewRequest(http.MethodGet, url, nil)
+	req := httptest.NewRequest(http.MethodGet, url, nil)
+	c.Request = req
+	req.AddCookie(&http.Cookie{Name: stateCookieName, Value: state})
 
 	r.ServeHTTP(rec, c.Request)
 
@@ -307,10 +399,7 @@ func TestOIDCSigninFailState(t *testing.T) {
 func TestOIDCSigninFailVerify(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.Default()
-	store := cookie.NewStore([]byte("secret"))
-	r.Use(sessions.Sessions("cookie", store))
-	r.Use(core.ApplicationErrorReporter())
-	state := "S"
+	r.Use(core.ApplicationErrorReporter(cookieSettings))
 
 	testSrv, closeSrv := setupMockOAuthServer()
 	defer func() {
@@ -322,18 +411,15 @@ func TestOIDCSigninFailVerify(t *testing.T) {
 	h.oauthConfig = *oauthConf
 	h.oauthVerifier = &mockVerifier{fail: true}
 
-	r.Use(func(c *gin.Context) {
-		s := sessions.Default(c)
-		s.Set(stateParam, state)
-		s.Save()
-	})
-	r.GET("/signin", h.Signin)
+	r.GET(signIn, h.Signin)
 
 	rec := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(rec)
-	url := fmt.Sprintf("/signin?%s=%s", stateParam, state)
+	url := fmt.Sprintf(signInURL, stateParam, state)
 
-	c.Request = httptest.NewRequest(http.MethodGet, url, nil)
+	req := httptest.NewRequest(http.MethodGet, url, nil)
+	c.Request = req
+	req.AddCookie(&http.Cookie{Name: stateCookieName, Value: state})
 
 	r.ServeHTTP(rec, c.Request)
 
@@ -343,10 +429,7 @@ func TestOIDCSigninFailVerify(t *testing.T) {
 func TestOIDCSigninFailClaims(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.Default()
-	store := cookie.NewStore([]byte("secret"))
-	r.Use(sessions.Sessions("cookie", store))
-	r.Use(core.ApplicationErrorReporter())
-	state := "S"
+	r.Use(core.ApplicationErrorReporter(cookieSettings))
 
 	testSrv, closeSrv := setupMockOAuthServer()
 	defer func() {
@@ -358,18 +441,15 @@ func TestOIDCSigninFailClaims(t *testing.T) {
 	h.oauthConfig = *oauthConf
 	h.oauthVerifier = &mockVerifier{failToken: true}
 
-	r.Use(func(c *gin.Context) {
-		s := sessions.Default(c)
-		s.Set(stateParam, state)
-		s.Save()
-	})
-	r.GET("/signin", h.Signin)
+	r.GET(signIn, h.Signin)
 
 	rec := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(rec)
-	url := fmt.Sprintf("/signin?%s=%s", stateParam, state)
+	url := fmt.Sprintf(signInURL, stateParam, state)
 
-	c.Request = httptest.NewRequest(http.MethodGet, url, nil)
+	req := httptest.NewRequest(http.MethodGet, url, nil)
+	c.Request = req
+	req.AddCookie(&http.Cookie{Name: stateCookieName, Value: state})
 
 	r.ServeHTTP(rec, c.Request)
 
@@ -379,12 +459,10 @@ func TestOIDCSigninFailClaims(t *testing.T) {
 func TestError(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.Default()
-	store := cookie.NewStore([]byte("secret"))
-	r.Use(sessions.Sessions("cookie", store))
 	r.LoadHTMLFiles("../../templates/error.tmpl")
 
 	h := GetHandler()
-	r.GET("/error", h.Error)
+	r.GET(errorPath, h.Error)
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/error", nil)

@@ -22,26 +22,56 @@ func TestErrorHandler(t *testing.T) {
 	)
 
 	errReq := httptest.NewRequest(http.MethodGet, "/", nil)
-	redirect := "http://redirect"
 	testcases := []struct {
-		Name   string
-		Status int
-		Error  error
+		Name     string
+		Status   int
+		Error    error
+		Accept   string
+		Redirect string
 	}{
 		{
 			Name:   "NotFoundError",
 			Status: http.StatusNotFound,
 			Error:  NotFoundError{Err: fmt.Errorf(errText), Request: errReq},
+			Accept: "application/json",
 		},
 		{
 			Name:   "BadRequestError",
 			Status: http.StatusBadRequest,
 			Error:  BadRequestError{Err: fmt.Errorf(errText), Request: errReq},
+			Accept: "application/json",
+		},
+		{
+			Name:     "RedirectErrorBrowser",
+			Status:   http.StatusTemporaryRedirect,
+			Error:    RedirectError{Err: fmt.Errorf(errText), Request: errReq, URL: "http://redirect", Status: http.StatusTemporaryRedirect},
+			Accept:   "text/html",
+			Redirect: "http://redirect",
+		},
+		{
+			Name:   "RedirectErrorBrowserJSON",
+			Status: http.StatusTemporaryRedirect,
+			Error:  RedirectError{Err: fmt.Errorf(errText), Request: errReq, URL: "http://redirect", Status: http.StatusTemporaryRedirect},
+			Accept: "application/json",
 		},
 		{
 			Name:   "error",
 			Status: http.StatusInternalServerError,
 			Error:  fmt.Errorf(errText),
+			Accept: "application/json",
+		},
+		{
+			Name:     "error.HTML",
+			Status:   http.StatusTemporaryRedirect,
+			Error:    fmt.Errorf(errText),
+			Accept:   "text/html",
+			Redirect: "/error",
+		},
+		{
+			Name:   "no-error",
+			Status: http.StatusOK,
+			Error:  nil,
+			Accept: "application/json",
 		},
 	}
 
@@ -53,33 +83,32 @@ func TestErrorHandler(t *testing.T) {
 
 			c, r := gin.CreateTestContext(rec)
 			c.Request = httptest.NewRequest(http.MethodGet, "/", nil)
+			c.Request.Header.Add("Accept", tc.Accept)
 
-			if tc.Name == "RedirectErrorBrowser" {
-				c.Request.Header.Add("Accept", "text/html")
-			}
-
-			r.Use(ApplicationErrorReporter())
+			r.Use(ApplicationErrorReporter(CookieSettings{
+				Path:   "/",
+				Domain: "localhost",
+				Secure: false,
+			}))
 			r.GET("/", func(c *gin.Context) {
-				c.Error(tc.Error)
+				if tc.Error != nil {
+					c.Error(tc.Error)
+					return
+				}
+				c.Status(http.StatusOK)
 				return
 			})
 			r.ServeHTTP(rec, c.Request)
 
 			assert.Equal(t, tc.Status, rec.Code)
 
-			if tc.Name == "RedirectErrorBrowser" {
-				assert.Equal(t, redirect, rec.Header().Get("Location"))
+			if tc.Redirect != "" {
+				assert.Equal(t, tc.Redirect, rec.Header().Get("Location"))
 				return
 			}
-
 			s = string(rec.Body.Bytes())
-			assert.NotEqual(t, "", s)
-			assert.NoError(t, json.Unmarshal(rec.Body.Bytes(), &pd))
-
-			assert.Equal(t, tc.Status, pd.Status)
-
-			if tc.Name == "RedirectError" {
-				assert.Equal(t, redirect, pd.Instance)
+			if s != "" {
+				assert.NoError(t, json.Unmarshal(rec.Body.Bytes(), &pd))
 			}
 		})
 	}

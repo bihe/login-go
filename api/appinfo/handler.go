@@ -30,7 +30,15 @@ type Handler struct {
 	core.VersionInfo
 }
 
-// GetAppInfo returns application metadata in JSON format
+// GetAppInfo godoc
+// @Summary provides information about the application
+// @Description meta-data of the application including authenticated user and version
+// @Tags appinfo
+// @Produce  json
+// @Success 200 {object} appinfo.Meta
+// @Failure 401 {object} core.ProblemDetail
+// @Failure 403 {object} core.ProblemDetail
+// @Router /api/v1/appinfo [get]
 func (h *Handler) GetAppInfo(c *gin.Context) {
 	log.Debugf("return the application metadata info")
 	user := c.MustGet(core.User).(security.User)

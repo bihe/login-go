@@ -29,6 +29,12 @@ var jwtOpts = JwtOptions{
 	CacheDuration: "10m",
 }
 
+var cookieSettings = core.CookieSettings{
+	Domain: "localhost",
+	Path:   "/",
+	Secure: false,
+}
+
 func TestJWTMiddlewareCookie(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	rec := httptest.NewRecorder()
@@ -89,7 +95,7 @@ func TestJWTMiddlewareNoToken(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, path, nil)
 	c.Request = req
 
-	r.Use(core.ApplicationErrorReporter())
+	r.Use(core.ApplicationErrorReporter(cookieSettings))
 	r.Use(JWTMiddleware(jwtOpts))
 
 	r.GET(path, func(c *gin.Context) {
@@ -114,7 +120,7 @@ func TestJWTMiddlewareWrongToken(t *testing.T) {
 	req.Header.Add("Authorization", "Bearer "+"token")
 	c.Request = req
 
-	r.Use(core.ApplicationErrorReporter())
+	r.Use(core.ApplicationErrorReporter(cookieSettings))
 	r.Use(JWTMiddleware(jwtOpts))
 
 	r.GET(path, func(c *gin.Context) {

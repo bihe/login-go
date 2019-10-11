@@ -8,11 +8,11 @@ import (
 
 // Configuration holds the application configuration
 type Configuration struct {
-	Sec     Security      `json:"security"`
-	DB      Database      `json:"database"`
-	Log     LogConfig     `json:"logging"`
-	OIDC    OAuthConfig   `json:"oidc"`
-	Session SessionConfig `json:"session"`
+	Sec        Security           `json:"security"`
+	DB         Database           `json:"database"`
+	Log        LogConfig          `json:"logging"`
+	OIDC       OAuthConfig        `json:"oidc"`
+	AppCookies ApplicationCookies `json:"appCookies"`
 }
 
 // Security settings for the application
@@ -27,6 +27,14 @@ type Security struct {
 	Claim         Claim  `json:"claim"`
 	CacheDuration string `json:"cacheDuration"`
 	LoginRedirect string `json:"loginRedirect"`
+}
+
+// ApplicationCookies defines values for cookies
+type ApplicationCookies struct {
+	Domain string `json:"domain"`
+	Path   string `json:"path"`
+	Secure bool   `json:"secure"`
+	Prefix string `json:"prefix"`
 }
 
 // Claim defines the required claims
@@ -54,12 +62,6 @@ type OAuthConfig struct {
 	ClientSecret string `json:"clientSecret"`
 	RedirectURL  string `json:"redirectURL"`
 	Provider     string `json:"provider"`
-}
-
-// SessionConfig configures cookie session storage
-type SessionConfig struct {
-	CookieName string `json:"cookieName"`
-	Secret     string `json:"secret"`
 }
 
 // GetSettings returns application configuration values

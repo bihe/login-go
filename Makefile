@@ -23,12 +23,14 @@ clean-test:
 coverage:
 	@-$(MAKE) -s go-test-coverage
 
+swagger:
+	@-$(MAKE) -s go-swagger
+
 run:
 	@-$(MAKE) -s go-compile go-run
 
 clean:
 	@-$(MAKE) go-clean
-
 
 go-compile: go-clean go-build
 
@@ -57,6 +59,10 @@ go-build:
 go-build-release:
 	@echo "  >  Building binary..."
 	GOOS=linux GOARCH=amd64 go build -ldflags="-w -s -X main.Version=${VERSION}${COMMIT} -X main.Build=${BUILD} -X main.Runtime=${RUNTIME}" -tags prod -o login.api
+
+go-swagger:
+	# go get -u github.com/swaggo/swag/cmd/swag
+	swag init -g server.go
 
 go-clean:
 	@echo "  >  Cleaning build cache"

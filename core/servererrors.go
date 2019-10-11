@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/markusthoemmes/goautoneg"
 
@@ -147,11 +146,11 @@ func ErrRedirectError(err RedirectError) *ProblemDetail {
 // --------------------------------------------------------------------------
 
 // ApplicationErrorReporter is a middleware to handle errors centrally
-func ApplicationErrorReporter() gin.HandlerFunc {
-	return errorReporter(gin.ErrorTypeAny)
+func ApplicationErrorReporter(cookie CookieSettings) gin.HandlerFunc {
+	return errorReporter(cookie, gin.ErrorTypeAny)
 }
 
-func errorReporter(errType gin.ErrorType) gin.HandlerFunc {
+func errorReporter(cookie CookieSettings, errType gin.ErrorType) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Next()
 
@@ -169,27 +168,14 @@ func errorReporter(errType gin.ErrorType) gin.HandlerFunc {
 		if len(detectedErrors) > 0 {
 			err := detectedErrors[0].Err
 
-			if notfound, ok := err.(NotFoundError); ok {
-				e = ErrNotFound(notfound)
-				c.JSON(e.Status, e)
-				c.Abort()
-				return
-			}
-
-			if badrequest, ok := err.(BadRequestError); ok {
-				e = ErrBadRequest(badrequest)
-				c.JSON(e.Status, e)
-				c.Abort()
-				return
-			}
+			// default error is the server-error
+			e = ErrServerError(ServerError{Err: err, Request: c.Request})
 
 			if redirect, ok := err.(RedirectError); ok {
 				e = ErrRedirectError(redirect)
 				switch content {
 				case HTML:
-					s := sessions.Default(c)
-					s.AddFlash(e.Detail, FlashKeyError)
-					s.Save()
+					SetCookie(FlashKeyError, e.Detail, CookieDefaultExp, cookie, c)
 					c.Redirect(http.StatusTemporaryRedirect, redirect.URL)
 					break
 				default:
@@ -203,9 +189,27 @@ func errorReporter(errType gin.ErrorType) gin.HandlerFunc {
 				return
 			}
 
-			// any other case we just print an internal server error
-			e = ErrServerError(ServerError{Err: err, Request: c.Request})
-			c.JSON(e.Status, e)
+			if notfound, ok := err.(NotFoundError); ok {
+				e = ErrNotFound(notfound)
+			}
+
+			if badrequest, ok := err.(BadRequestError); ok {
+				e = ErrBadRequest(badrequest)
+			}
+
+			switch content {
+			case HTML:
+				SetCookie(FlashKeyError, e.Detail, CookieDefaultExp, cookie, c)
+				c.Redirect(http.StatusTemporaryRedirect, ErrorPath)
+				break
+			default:
+				status := http.StatusTemporaryRedirect
+				if e.Status > 0 {
+					status = e.Status
+				}
+				c.JSON(status, e)
+				break
+			}
 			c.Abort()
 		}
 	}

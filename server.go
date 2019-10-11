@@ -35,6 +35,13 @@ type ServerArgs struct {
 	ConfigFile string
 }
 
+// @title login application
+// @version 2.0
+// @description The central login for all my applications
+
+// @license.name Apache 2.0
+// @license.url https://github.com/bihe/login-go/blob/master/LICENSE
+
 func main() {
 	api, addr := setupAPIServer()
 
@@ -114,7 +121,11 @@ func setupAPIServer() (*gin.Engine, string) {
 	r.Use(gin.Recovery())
 
 	// kind of central error handling (@see labstack echo!)
-	r.Use(core.ApplicationErrorReporter())
+	r.Use(core.ApplicationErrorReporter(core.CookieSettings{
+		Path:   c.Sec.CookiePath,
+		Domain: c.Sec.CookieDomain,
+		Secure: c.Sec.CookieSecure,
+	}))
 
 	// persistence store && application version
 	version := core.VersionInfo{

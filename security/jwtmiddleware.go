@@ -12,8 +12,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const errorPath = "error"
-
 // JWTMiddleware is used to authenticate a user based on a token
 // the token is either retrieved by the well known Authorization header
 // or fetched from a cookie
@@ -41,7 +39,7 @@ func handleJWT(options JwtOptions, cache *memoryCache) gin.HandlerFunc {
 					Status:  http.StatusUnauthorized,
 					Err:     fmt.Errorf("invalid authentication, no JWT token present"),
 					Request: c.Request,
-					URL:     options.RedirectURL + errorPath,
+					URL:     options.RedirectURL + core.ErrorPath,
 				})
 				c.Abort()
 				return
@@ -68,7 +66,7 @@ func handleJWT(options JwtOptions, cache *memoryCache) gin.HandlerFunc {
 				Status:  http.StatusUnauthorized,
 				Err:     fmt.Errorf("invalid authentication, could not parse the JWT token: %v", err),
 				Request: c.Request,
-				URL:     options.RedirectURL + errorPath,
+				URL:     options.RedirectURL + core.ErrorPath,
 			})
 			c.Abort()
 			return
@@ -80,7 +78,7 @@ func handleJWT(options JwtOptions, cache *memoryCache) gin.HandlerFunc {
 				Status:  http.StatusForbidden,
 				Err:     fmt.Errorf("Invalid authorization: %v", err),
 				Request: c.Request,
-				URL:     options.RedirectURL + errorPath,
+				URL:     options.RedirectURL + core.ErrorPath,
 			})
 			c.Abort()
 			return
