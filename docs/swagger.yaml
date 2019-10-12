@@ -37,6 +37,28 @@ definitions:
           dereferenced, it provide human-readable documentation for the problem
         type: string
     type: object
+  sites.SiteInfo:
+    properties:
+      name:
+        type: string
+      permissions:
+        items:
+          type: string
+        type: array
+      url:
+        type: string
+    type: object
+  sites.UserInfo:
+    properties:
+      editable:
+        type: boolean
+      user:
+        type: string
+      userSites:
+        items:
+          $ref: '#/definitions/sites.SiteInfo'
+        type: array
+    type: object
 info:
   contact: {}
   description: The central login for all my applications
@@ -67,4 +89,29 @@ paths:
       summary: provides information about the application
       tags:
       - appinfo
+  /api/v1/sites:
+    get:
+      description: returns all the sites of the current loged-in user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/sites.UserInfo'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/core.ProblemDetail'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/core.ProblemDetail'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/core.ProblemDetail'
+      summary: sites of current user
+      tags:
+      - sites
 swagger: "2.0"

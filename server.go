@@ -120,13 +120,6 @@ func setupAPIServer() (*gin.Engine, string) {
 	// Recovery middleware recovers from any panics and writes a 500 if there was one.
 	r.Use(gin.Recovery())
 
-	// kind of central error handling (@see labstack echo!)
-	r.Use(core.ApplicationErrorReporter(core.CookieSettings{
-		Path:   c.Sec.CookiePath,
-		Domain: c.Sec.CookieDomain,
-		Secure: c.Sec.CookieSecure,
-	}))
-
 	// persistence store && application version
 	version := core.VersionInfo{
 		Version: Version,

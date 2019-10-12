@@ -42,6 +42,44 @@
                     }
                 }
             }
+        },
+        "/api/v1/sites": {
+            "get": {
+                "description": "returns all the sites of the current loged-in user",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "sites"
+                ],
+                "summary": "sites of current user",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/sites.UserInfo"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/core.ProblemDetail"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/core.ProblemDetail"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/core.ProblemDetail"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -90,6 +128,40 @@
                 "type": {
                     "description": "Type is a URI reference [RFC3986] that identifies the\nproblem type.  This specification encourages that, when\ndereferenced, it provide human-readable documentation for the problem",
                     "type": "string"
+                }
+            }
+        },
+        "sites.SiteInfo": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "permissions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "sites.UserInfo": {
+            "type": "object",
+            "properties": {
+                "editable": {
+                    "type": "boolean"
+                },
+                "user": {
+                    "type": "string"
+                },
+                "userSites": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/sites.SiteInfo"
+                    }
                 }
             }
         }

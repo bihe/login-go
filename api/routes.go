@@ -5,6 +5,7 @@ import (
 
 	"github.com/bihe/login-go/api/appinfo"
 	"github.com/bihe/login-go/api/authoidc"
+	"github.com/bihe/login-go/api/sites"
 	"github.com/bihe/login-go/core"
 	"github.com/bihe/login-go/persistence"
 	"github.com/bihe/login-go/security"
@@ -18,6 +19,18 @@ import (
 
 // RegisterRoutes defines the routes of the available handlers
 func RegisterRoutes(r *gin.Engine, config core.Configuration, version core.VersionInfo, con persistence.Connection) {
+	// application cookie settings
+	// used for client-sessions-like messages and interaction
+	cookie := core.CookieSettings{
+		Path:   config.AppCookies.Path,
+		Domain: config.AppCookies.Domain,
+		Secure: config.AppCookies.Secure,
+		Prefix: config.AppCookies.Prefix,
+	}
+
+	// kind of central error handling (@see labstack echo!)
+	r.Use(core.ApplicationErrorReporter(cookie))
+
 	// serving static content
 	r.StaticFile("/favicon.ico", "./assets/favicon.ico")
 	r.Static("/assets", "./assets")
@@ -30,12 +43,7 @@ func RegisterRoutes(r *gin.Engine, config core.Configuration, version core.Versi
 	}
 
 	// open-ID-connect
-	oidcH := authoidc.NewHandler(version, config.OIDC, config.Sec, core.CookieSettings{
-		Path:   config.AppCookies.Path,
-		Domain: config.AppCookies.Domain,
-		Secure: config.AppCookies.Secure,
-		Prefix: config.AppCookies.Prefix,
-	}, repo)
+	oidcH := authoidc.NewHandler(version, config.OIDC, config.Sec, cookie, repo)
 	r.GET("/oidc", oidcH.GetRedirect)
 	r.GET("/signin-oidc", oidcH.Signin)
 	r.GET("/error", oidcH.Error)
@@ -66,6 +74,10 @@ func RegisterRoutes(r *gin.Engine, config core.Configuration, version core.Versi
 
 	// the API
 	api := r.Group("/api/v1")
+	// appinfo
 	aih := &appinfo.Handler{VersionInfo: version}
 	api.GET("/appinfo", aih.GetAppInfo)
+	// sites
+	sh := sites.NewHandler("login", "Admin", repo)
+	api.GET("/sites", sh.GetSites)
 }
