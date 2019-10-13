@@ -68,6 +68,12 @@ func TestErrorHandler(t *testing.T) {
 			Redirect: "/error",
 		},
 		{
+			Name:   "security",
+			Status: http.StatusForbidden,
+			Error:  SecurityError{Err: fmt.Errorf(errText), Request: errReq},
+			Accept: "application/json",
+		},
+		{
 			Name:   "no-error",
 			Status: http.StatusOK,
 			Error:  nil,

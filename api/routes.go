@@ -76,8 +76,9 @@ func RegisterRoutes(r *gin.Engine, config core.Configuration, version core.Versi
 	api := r.Group("/api/v1")
 	// appinfo
 	aih := &appinfo.Handler{VersionInfo: version}
-	api.GET("/appinfo", aih.GetAppInfo)
+	api.GET("/appinfo", security.W(aih.GetAppInfo))
 	// sites
 	sh := sites.NewHandler("login", "Admin", repo)
-	api.GET("/sites", sh.GetSites)
+	api.GET("/sites", security.W(sh.GetSites))
+	api.POST("/sites", security.W(sh.SaveSites))
 }

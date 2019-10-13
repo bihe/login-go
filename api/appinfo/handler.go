@@ -6,7 +6,6 @@ import (
 
 	"github.com/bihe/login-go/core"
 	"github.com/bihe/login-go/security"
-	"github.com/gin-gonic/gin"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -39,10 +38,9 @@ type Handler struct {
 // @Failure 401 {object} core.ProblemDetail
 // @Failure 403 {object} core.ProblemDetail
 // @Router /api/v1/appinfo [get]
-func (h *Handler) GetAppInfo(c *gin.Context) {
+func (h *Handler) GetAppInfo(a *security.AppContext) {
 	log.Debugf("return the application metadata info")
-	user := c.MustGet(core.User).(security.User)
-
+	user := a.User()
 	info := Meta{
 		Runtime: h.Runtime,
 		Version: fmt.Sprintf("%s-%s", h.Version, h.Build),
@@ -52,5 +50,5 @@ func (h *Handler) GetAppInfo(c *gin.Context) {
 			Roles:       user.Roles,
 		},
 	}
-	c.JSON(http.StatusOK, info)
+	a.JSON(http.StatusOK, info)
 }

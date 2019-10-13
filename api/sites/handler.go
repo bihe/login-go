@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/bihe/login-go/core"
 	"github.com/bihe/login-go/persistence"
 	"github.com/bihe/login-go/security"
-	"github.com/gin-gonic/gin"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -37,7 +37,6 @@ type SiteInfo struct {
 
 // Handler defines the methods for the sites api
 type Handler struct {
-	site     string
 	editRole string
 	repo     persistence.Repository
 }
@@ -60,19 +59,19 @@ func NewHandler(siteName, editRole string, repo persistence.Repository) *Handler
 // @Failure 403 {object} core.ProblemDetail
 // @Failure 404 {object} core.ProblemDetail
 // @Router /api/v1/sites [get]
-func (h *Handler) GetSites(c *gin.Context) {
-	user := c.MustGet(core.User).(security.User)
+func (h *Handler) GetSites(a *security.AppContext) {
+	user := a.User()
 	sites, err := h.repo.GetSitesByUser(user.Email)
 	if err != nil {
 		log.Warnf("cannot get sites of current user '%s', %v", user.Email, err)
-		c.Error(core.NotFoundError{Err: fmt.Errorf("no sites for given user '%s'", user.Email), Request: c.Request})
+		a.Error(core.NotFoundError{Err: fmt.Errorf("no sites for given user '%s'", user.Email), Request: a.Request})
 		return
 	}
 
 	u := UserInfo{
-		User: user.Email,
+		User: user.Username,
 	}
-	u.Editable = hasRole(h.editRole, user.Roles)
+	u.Editable = a.HasRole(h.editRole)
 	for _, s := range sites {
 		parts := strings.Split(s.PermList, ";")
 		u.Sites = append(u.Sites, SiteInfo{
@@ -82,16 +81,54 @@ func (h *Handler) GetSites(c *gin.Context) {
 		})
 	}
 
-	c.JSON(http.StatusOK, u)
+	a.JSON(http.StatusOK, u)
 }
 
-func hasRole(want string, has []string) bool {
-	if has != nil {
-		for _, p := range has {
-			if p == want {
-				return true
-			}
-		}
+// SaveSites godoc
+// @Summary stores the given sites
+// @Description takes a list of sites and stores the supplied sites for the user
+// @Tags sites
+// @Produce  json
+// @Success 201 {string} sites.UserInfo
+// @Failure 400 {object} core.ProblemDetail
+// @Failure 401 {object} core.ProblemDetail
+// @Failure 403 {object} core.ProblemDetail
+// @Failure 500 {object} core.ProblemDetail
+// @Router /api/v1/sites [post]
+func (h *Handler) SaveSites(a *security.AppContext) {
+	user := a.User()
+	if !a.HasRole(h.editRole) {
+		log.Warnf("user '%s' tried to save but does not have required permissions", user.Email)
+		a.Error(core.SecurityError{Err: fmt.Errorf("user '%s' is not allowed to perform this action", user.Email), Request: a.Request})
+		return
 	}
-	return false
+
+	// payload is an array of SiteInfo
+	var (
+		payload []SiteInfo
+		err     error
+	)
+	if err = a.BindJSON(&payload); err != nil {
+		a.Error(core.BadRequestError{Err: fmt.Errorf("could not use supplied payload: %v", err), Request: a.Request})
+		return
+	}
+
+	var sites []persistence.UserSite
+	for _, p := range payload {
+		sites = append(sites, persistence.UserSite{
+			Name:     p.Name,
+			URL:      p.URL,
+			PermList: strings.Join(p.Perm, ";"),
+			User:     user.Email,
+			Created:  time.Now().UTC(),
+		})
+	}
+	err = h.repo.StoreSiteForUser(user.Email, sites, persistence.Atomic{})
+	if err != nil {
+		log.Errorf("could not save sites of user '%s': %v", user.Email, err)
+		a.Error(core.ServerError{Err: fmt.Errorf("could not save payload: %v", err), Request: a.Request})
+		return
+	}
+
+	a.Status(http.StatusCreated)
 }

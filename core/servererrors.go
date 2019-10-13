@@ -94,6 +94,17 @@ func (e RedirectError) Error() string {
 	return fmt.Sprintf("the request '%s' resulted in a redirect to: '%s', error: %v", e.Request.RequestURI, e.URL, e.Err)
 }
 
+// SecurityError is used when something is not allowed
+type SecurityError struct {
+	Err     error
+	Request *http.Request
+}
+
+// Error implements the error interface
+func (e SecurityError) Error() string {
+	return fmt.Sprintf("the request '%s' is not allowed: %v", e.Request.RequestURI, e.Err)
+}
+
 // --------------------------------------------------------------------------
 // Shortcuts for commen error responses
 // --------------------------------------------------------------------------
@@ -126,6 +137,16 @@ func ErrServerError(err ServerError) *ProblemDetail {
 		Type:   t,
 		Title:  "cannot service the request",
 		Status: http.StatusInternalServerError,
+		Detail: err.Error(),
+	}
+}
+
+// ErrSecurityError returns a http.StatusForbidden
+func ErrSecurityError(err SecurityError) *ProblemDetail {
+	return &ProblemDetail{
+		Type:   t,
+		Title:  "operation is not allowed",
+		Status: http.StatusForbidden,
 		Detail: err.Error(),
 	}
 }
@@ -195,6 +216,10 @@ func errorReporter(cookie CookieSettings, errType gin.ErrorType) gin.HandlerFunc
 
 			if badrequest, ok := err.(BadRequestError); ok {
 				e = ErrBadRequest(badrequest)
+			}
+
+			if security, ok := err.(SecurityError); ok {
+				e = ErrSecurityError(security)
 			}
 
 			switch content {

@@ -33,7 +33,7 @@ func TestGetAppInfo(t *testing.T) {
 	})
 
 	aih := &Handler{VersionInfo: version}
-	r.GET("/appinfo", aih.GetAppInfo)
+	r.GET("/appinfo", security.W(aih.GetAppInfo))
 
 	w := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "/appinfo", nil)
