@@ -10,9 +10,7 @@ export class BaseDataService {
     let errorRaised: any;
     if (error instanceof HttpErrorResponse) {
       try {
-        errorRaised = {};
-        errorRaised.Message = error.message;
-        errorRaised.Status = error.status;
+        errorRaised = error.error;
       } catch (exception) {
         errorRaised = error.toString();
       }

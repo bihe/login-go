@@ -1,16 +1,17 @@
 import { ReplaySubject } from 'rxjs';
 import { UserInfo } from '../models/user.info.model';
+import { AppInfo } from './app.info.model';
 
 export class ApplicationState {
     private progress: ReplaySubject<boolean> = new ReplaySubject();
-    private userInfo: ReplaySubject<UserInfo> = new ReplaySubject();
+    private appInfo: ReplaySubject<AppInfo> = new ReplaySubject();
 
-    public setUserInfo(data: UserInfo) {
-        this.userInfo.next(data);
+    public setAppInfo(data: AppInfo) {
+        this.appInfo.next(data);
     }
 
-    public getUserInfo(): ReplaySubject<UserInfo> {
-        return this.userInfo;
+    public getAppInfo(): ReplaySubject<AppInfo> {
+        return this.appInfo;
     }
 
     public setProgress(data: boolean) {

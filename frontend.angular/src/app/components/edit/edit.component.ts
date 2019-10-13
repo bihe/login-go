@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { MatSnackBar } from '@angular/material';
 import { Router } from '@angular/router';
 import { UserInfo } from '../../shared/models/user.info.model';
-import { ApiUserService } from '../../shared/service/api.users.service';
+import { ApiUserService } from '../../shared/service/api.sites.service';
 import { ApplicationState } from '../../shared/service/application.state';
 import { MessageUtils } from '../../shared/utils/message.utils';
 
@@ -50,25 +50,25 @@ export class EditComponent implements OnInit {
 
     let user: UserInfo;
     user = JSON.parse(this.jsonPayload);
-    this.userService.saveUserInfo(user)
+    this.userService.saveUserInfo(user.userSites)
       .subscribe(
         data => {
           // stupid hack, to enforce a redirect to re-challenge authentication
           // the better approach would be to handle 302 or 403 and act accordingly
-          if (data.userName === '__RELOGIN__') {
-            console.log('No result received from backend - re-trigger authentication process!');
-            window.location.href = '/relogin';
-            return;
-          }
+          // if (data.userName === '__RELOGIN__') {
+          //   console.log('No result received from backend - re-trigger authentication process!');
+          //   window.location.href = '/relogin';
+          //   return;
+          // }
 
           console.log('saved!');
-          this.jsonPayload = this.jsonify(data);
           this.state.setProgress(false);
+          new MessageUtils().showSuccess(this.snackBar, "success!");
         },
         error => {
           this.state.setProgress(false);
-          console.log('Error: ' + error);
-          new MessageUtils().showError(this.snackBar, error);
+          console.log(error.detail);
+          new MessageUtils().showError(this.snackBar, error.detail);
         }
       );
   }

@@ -4,7 +4,7 @@
 
     <section class="card-container">
 
-      <article class="card" *ngFor="let item of userInfo?.sitePermissions" id="{{ item.name }}">
+      <article class="card" *ngFor="let item of userInfo?.userSites" id="{{ item.name }}">
           <header class="card__title">
               <h3><i class="fa fa-external-link" aria-hidden="true"></i>&nbsp;<a href="{{ item.url }}">{{ item.name }}</a></h3>
           </header>

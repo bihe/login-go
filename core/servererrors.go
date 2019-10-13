@@ -190,7 +190,11 @@ func errorReporter(cookie CookieSettings, errType gin.ErrorType) gin.HandlerFunc
 			err := detectedErrors[0].Err
 
 			// default error is the server-error
-			e = ErrServerError(ServerError{Err: err, Request: c.Request})
+			if svrErr, ok := err.(ServerError); ok {
+				e = ErrServerError(svrErr)
+			} else {
+				e = ErrServerError(ServerError{Err: err, Request: c.Request})
+			}
 
 			if redirect, ok := err.(RedirectError); ok {
 				e = ErrRedirectError(redirect)

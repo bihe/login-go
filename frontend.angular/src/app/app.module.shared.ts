@@ -10,8 +10,8 @@ import { FooterComponent } from './components/footer/footer.component';
 import { HeaderComponent } from './components/header/header.component';
 import { HomeComponent } from './components/home/home.component';
 import { EllipsisPipe } from './shared/pipes/ellipsis';
-import { ApiUserService } from './shared/service/api.users.service';
-import { ApiVersionService } from './shared/service/api.version.service';
+import { ApiUserService } from './shared/service/api.sites.service';
+import { ApiAppInfoService } from './shared/service/api.app.service';
 import { ApplicationState } from './shared/service/application.state';
 
 
@@ -34,6 +34,6 @@ export const sharedConfig: NgModule = {
     imports: [
         AppMaterialModule
     ],
-    providers: [ ApplicationState, ApiVersionService, ApiUserService ],
+    providers: [ ApplicationState, ApiAppInfoService, ApiUserService ],
     entryComponents: []
 };

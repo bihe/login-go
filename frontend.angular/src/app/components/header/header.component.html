@@ -36,7 +36,7 @@
   [style.transform]="menuTransform()">
   <div class="menu__header">
     <div class="user_info">
-      <i class="fa fa-sign-out" aria-hidden="true"></i> <a class="link" href="/logout" matTooltip="{{ userInfo?.userName }} ({{ userInfo?.email }})">Logout: {{ userInfo?.displayName }}</a>
+      <i class="fa fa-sign-out" aria-hidden="true"></i> <a class="link" href="/logout" matTooltip="{{ appInfo?.email }}">Logout: {{ appInfo?.displayName }}</a>
     </div>
   </div>
   <ul class="menu__list">

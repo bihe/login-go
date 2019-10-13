@@ -110,6 +110,7 @@ func (h *Handler) SaveSites(a *security.AppContext) {
 	)
 	if err = a.BindJSON(&payload); err != nil {
 		a.Error(core.BadRequestError{Err: fmt.Errorf("could not use supplied payload: %v", err), Request: a.Request})
+		a.Abort()
 		return
 	}
 
@@ -127,6 +128,7 @@ func (h *Handler) SaveSites(a *security.AppContext) {
 	if err != nil {
 		log.Errorf("could not save sites of user '%s': %v", user.Email, err)
 		a.Error(core.ServerError{Err: fmt.Errorf("could not save payload: %v", err), Request: a.Request})
+		a.Abort()
 		return
 	}
 

@@ -5,6 +5,7 @@ import { MatSnackBar } from '@angular/material';
 import { ApplicationState } from '../../shared/service/application.state';
 import { MessageUtils } from '../../shared/utils/message.utils';
 import { UserInfo } from '../../shared/models/user.info.model';
+import { AppInfo } from '../../shared/service/app.info.model';
 
 @Component({
   selector: 'app-header',
@@ -15,7 +16,7 @@ export class HeaderComponent implements OnInit {
 
   menuVisible = false;
   showProgress = false;
-  userInfo: UserInfo;
+  appInfo: AppInfo;
 
   constructor(
     private state: ApplicationState,
@@ -35,10 +36,10 @@ export class HeaderComponent implements OnInit {
         }
       );
 
-    this.state.getUserInfo()
+    this.state.getAppInfo()
       .subscribe(
         data => {
-          this.userInfo = data;
+          this.appInfo = data;
         },
         error => {
           new MessageUtils().showError(this.snackBar, error);

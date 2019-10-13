@@ -4,7 +4,7 @@ import { ApplicationState } from '../../shared/service/application.state';
 import { MessageUtils } from '../../shared/utils/message.utils';
 import { MatSnackBar } from '@angular/material';
 import { UserInfo } from '../../shared/models/user.info.model';
-import { ApiUserService } from '../../shared/service/api.users.service';
+import { ApiUserService } from '../../shared/service/api.sites.service';
 
 @Component({
   selector: 'app-home',
@@ -16,7 +16,6 @@ export class HomeComponent implements OnInit {
   userInfo: UserInfo;
 
   constructor(private userService: ApiUserService,
-    private state: ApplicationState,
     private snackBar: MatSnackBar,
     private router: Router,
   ) {}
@@ -26,7 +25,6 @@ export class HomeComponent implements OnInit {
       .subscribe(
         data => {
           this.userInfo = data;
-          this.state.setUserInfo(data);
         },
         error => {
           console.log('Error: ' + error);

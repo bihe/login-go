@@ -1,7 +1,11 @@
 package api
 
 import (
+	"crypto/md5"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"strings"
 
 	"github.com/bihe/login-go/api/appinfo"
 	"github.com/bihe/login-go/api/authoidc"
@@ -69,9 +73,6 @@ func RegisterRoutes(r *gin.Engine, config core.Configuration, version core.Versi
 	url := ginSwagger.URL("/swagger/doc.json")
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, url))
 
-	// the SPA ui
-	r.Static("/ui", "./ui")
-
 	// the API
 	api := r.Group("/api/v1")
 	// appinfo
@@ -81,4 +82,25 @@ func RegisterRoutes(r *gin.Engine, config core.Configuration, version core.Versi
 	sh := sites.NewHandler("login", "Admin", repo)
 	api.GET("/sites", security.W(sh.GetSites))
 	api.POST("/sites", security.W(sh.SaveSites))
+
+	// the SPA ui
+	r.Static("/ui", "./ui")
+	// fallback for unresolved SPA paths
+	// copied from: https://github.com/go-ggz/ggz/blob/8e98db8d743a66bf2f3ea8dbb8c48686abc150a5/web/index.go
+	r.NoRoute(func(c *gin.Context) {
+		file, _ := ioutil.ReadFile("ui/index.html")
+		etag := fmt.Sprintf("%x", md5.Sum(file))
+		c.Header("ETag", etag)
+		c.Header("Cache-Control", "no-cache")
+
+		if match := c.GetHeader("If-None-Match"); match != "" {
+			if strings.Contains(match, etag) {
+				c.Status(http.StatusNotModified)
+				return
+			}
+		}
+
+		c.Data(http.StatusOK, "text/html; charset=utf-8", file)
+	})
+
 }

@@ -108,7 +108,7 @@ func (repo *dbRepository) StoreSiteForUser(user string, sites []UserSite, a Atom
 	}
 
 	for _, site := range sites {
-		r, err = atomic.Exec("INSERT INTO USERSITE (name,user,url,permission_list, created) VALUES (?,?,?,?;?)", site.Name, site.User, site.URL, site.PermList, site.Created)
+		r, err = atomic.Exec("INSERT INTO USERSITE (name,user,url,permission_list, created) VALUES (?,?,?,?,?)", site.Name, site.User, site.URL, site.PermList, site.Created)
 		if err != nil {
 			err = fmt.Errorf("could not insert user-site: %v", err)
 			return
