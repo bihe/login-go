@@ -75,16 +75,19 @@ func RegisterRoutes(r *gin.Engine, config core.Configuration, version core.Versi
 
 	// the API
 	api := r.Group("/api/v1")
+
 	// appinfo
 	aih := &appinfo.Handler{VersionInfo: version}
 	api.GET("/appinfo", security.W(aih.GetAppInfo))
+
 	// sites
-	sh := sites.NewHandler("login", "Admin", repo)
+	sh := sites.NewHandler(config.Sec.Claim.Roles[0], repo) // the first role of the claims is used as the "edit-role"!
 	api.GET("/sites", security.W(sh.GetSites))
 	api.POST("/sites", security.W(sh.SaveSites))
 
 	// the SPA ui
 	r.Static("/ui", "./ui")
+
 	// fallback for unresolved SPA paths
 	// copied from: https://github.com/go-ggz/ggz/blob/8e98db8d743a66bf2f3ea8dbb8c48686abc150a5/web/index.go
 	r.NoRoute(func(c *gin.Context) {

@@ -67,7 +67,7 @@ func (m mockRepository) StoreLogin(login persistence.Login, a persistence.Atomic
 // --------------------------------------------------------------------------
 
 func TestNewHandler(t *testing.T) {
-	h := NewHandler("site", "role", mockRepository{})
+	h := NewHandler("role", mockRepository{})
 	if h == nil {
 		t.Errorf("could not get a handler")
 	}

@@ -42,7 +42,7 @@ type Handler struct {
 }
 
 // NewHandler returns a pointer to a handler
-func NewHandler(siteName, editRole string, repo persistence.Repository) *Handler {
+func NewHandler(editRole string, repo persistence.Repository) *Handler {
 	return &Handler{
 		editRole: editRole,
 		repo:     repo,
