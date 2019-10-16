@@ -28,14 +28,14 @@ RUN GOOS=linux GOARCH=amd64 go build -ldflags="-w -s -X main.Version=${VERSION}-
 FROM alpine:latest
 LABEL author="henrik@binggl.net"
 WORKDIR /opt/login
-RUN mkdir -p /opt/login/ui && mkdir -p /opt/login/etc && mkdir -p /opt/login/logs && mkdir -p /opt/login/templates
-COPY --from=BACKEND-BUILD /backend-build/login.api /opt/login
+RUN mkdir -p /opt/login/ui && mkdir -p /opt/login/etc && mkdir -p /opt/login/logs && mkdir -p /opt/login/templates && mkdir -p /opt/login/logs
+## required folders assets && templates
+COPY --from=BACKEND-BUILD /backend-build/assets /opt/login/assets
 COPY --from=BACKEND-BUILD /backend-build/templates /opt/login/templates
+## the executable
+COPY --from=BACKEND-BUILD /backend-build/login.api /opt/login
+## the SPA frontend
 COPY --from=FRONTEND-BUILD /frontend-build/dist  /opt/login/ui
-RUN ls -l /opt/login
-RUN ls -l /opt/login/etc
-RUN ls -l /opt/login/ui
-RUN ls -l /opt/login/templates
 
 EXPOSE 3000
 
