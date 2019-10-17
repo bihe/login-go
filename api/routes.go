@@ -19,10 +19,13 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 
 	_ "github.com/bihe/login-go/docs" // make generated swagger doc available
+
+	per "github.com/bihe/commons-go/persistence"
+	sec "github.com/bihe/commons-go/security"
 )
 
 // RegisterRoutes defines the routes of the available handlers
-func RegisterRoutes(r *gin.Engine, config core.Configuration, version core.VersionInfo, con persistence.Connection) {
+func RegisterRoutes(r *gin.Engine, config core.Configuration, version core.VersionInfo, con per.Connection) {
 	// application cookie settings
 	// used for client-sessions-like messages and interaction
 	cookie := core.CookieSettings{
@@ -57,7 +60,7 @@ func RegisterRoutes(r *gin.Engine, config core.Configuration, version core.Versi
 		JwtSecret:  config.Sec.JwtSecret,
 		JwtIssuer:  config.Sec.JwtIssuer,
 		CookieName: config.Sec.CookieName,
-		RequiredClaim: security.Claim{
+		RequiredClaim: sec.Claim{
 			Name:  config.Sec.Claim.Name,
 			URL:   config.Sec.Claim.URL,
 			Roles: config.Sec.Claim.Roles,

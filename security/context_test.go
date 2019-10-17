@@ -7,6 +7,8 @@ import (
 	"github.com/bihe/login-go/core"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
+
+	sec "github.com/bihe/commons-go/security"
 )
 
 func TestUserInContext(t *testing.T) {
@@ -14,7 +16,7 @@ func TestUserInContext(t *testing.T) {
 
 	rec := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(rec)
-	c.Set(core.User, User{
+	c.Set(core.User, sec.User{
 		Username:    "username",
 		Email:       "a.b@c.de",
 		DisplayName: "displayname",
@@ -44,7 +46,7 @@ func TestUserHasRole(t *testing.T) {
 
 	rec := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(rec)
-	c.Set(core.User, User{
+	c.Set(core.User, sec.User{
 		Username:    "username",
 		Email:       "a.b@c.de",
 		DisplayName: "displayname",

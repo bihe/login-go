@@ -9,6 +9,8 @@ import (
 	"github.com/bihe/login-go/core"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
+
+	sec "github.com/bihe/commons-go/security"
 )
 
 const cookie = "cookie"
@@ -20,7 +22,7 @@ var jwtOpts = JwtOptions{
 	JwtSecret:  "secret",
 	JwtIssuer:  "issuer",
 	CookieName: cookie,
-	RequiredClaim: Claim{
+	RequiredClaim: sec.Claim{
 		Name:  "claim",
 		URL:   "http://localhost:3000",
 		Roles: []string{"role"},

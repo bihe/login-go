@@ -13,10 +13,12 @@ import (
 
 	"github.com/bihe/login-go/core"
 	"github.com/bihe/login-go/persistence"
-	"github.com/bihe/login-go/security"
 	"github.com/gin-gonic/gin"
 
 	log "github.com/sirupsen/logrus"
+
+	per "github.com/bihe/commons-go/persistence"
+	sec "github.com/bihe/commons-go/security"
 )
 
 // --------------------------------------------------------------------------
@@ -239,7 +241,7 @@ func (h *Handler) Signin(c *gin.Context) {
 	for _, s := range sites {
 		siteClaims = append(siteClaims, fmt.Sprintf("%s|%s|%s", s.Name, s.URL, s.PermList))
 	}
-	claims := security.Claims{
+	claims := sec.Claims{
 		Type:        "login.User",
 		DisplayName: oidcClaims.DisplayName,
 		Email:       oidcClaims.Email,
@@ -249,7 +251,7 @@ func (h *Handler) Signin(c *gin.Context) {
 		Surname:     oidcClaims.FamilyName,
 		Claims:      siteClaims,
 	}
-	token, err := security.CreateToken(h.jwt.JwtIssuer, []byte(h.jwt.JwtSecret), h.jwt.Expiry, claims)
+	token, err := sec.CreateToken(h.jwt.JwtIssuer, []byte(h.jwt.JwtSecret), h.jwt.Expiry, claims)
 	if err != nil {
 		log.Errorf("could not create a JWT token: %v", err)
 		c.Error(core.ServerError{Err: fmt.Errorf("error creating JWT: %v", err), Request: c.Request})
@@ -266,7 +268,7 @@ func (h *Handler) Signin(c *gin.Context) {
 		login.Type = persistence.FLOW
 	}
 
-	err = h.repo.StoreLogin(login, persistence.Atomic{})
+	err = h.repo.StoreLogin(login, per.Atomic{})
 	if err != nil {
 		log.Errorf("the login could not be saved: %v", err)
 		c.Error(core.ServerError{Err: fmt.Errorf("error storing the login: %v", err), Request: c.Request})
@@ -289,7 +291,7 @@ func (h *Handler) Signin(c *gin.Context) {
 
 // Logout invalidates the authenticated user
 func (h *Handler) Logout(c *gin.Context) {
-	user := c.MustGet(core.User).(security.User)
+	user := c.MustGet(core.User).(sec.User)
 
 	// remove the cookie by expiring it
 	h.setJWTCookie(h.jwt.CookieName, "", -1, c)

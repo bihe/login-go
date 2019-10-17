@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	per "github.com/bihe/commons-go/persistence"
 )
 
 // --------------------------------------------------------------------------
@@ -43,14 +45,14 @@ type Login struct {
 
 // Repository defines the methods interacting with the store
 type Repository interface {
-	CreateAtomic() (Atomic, error)
+	CreateAtomic() (per.Atomic, error)
 	GetSitesByUser(user string) ([]UserSite, error)
-	StoreSiteForUser(user string, sites []UserSite, a Atomic) (err error)
-	StoreLogin(login Login, a Atomic) (err error)
+	StoreSiteForUser(user string, sites []UserSite, a per.Atomic) (err error)
+	StoreLogin(login Login, a per.Atomic) (err error)
 }
 
 // NewRepository creates a new instance using an existing connection
-func NewRepository(c Connection) (Repository, error) {
+func NewRepository(c per.Connection) (Repository, error) {
 	if !c.Active {
 		return nil, fmt.Errorf("no repository connection available")
 	}
@@ -62,10 +64,10 @@ func NewRepository(c Connection) (Repository, error) {
 // --------------------------------------------------------------------------
 
 type dbRepository struct {
-	c Connection
+	c per.Connection
 }
 
-func (repo *dbRepository) CreateAtomic() (Atomic, error) {
+func (repo *dbRepository) CreateAtomic() (per.Atomic, error) {
 	return repo.c.CreateAtomic()
 }
 
@@ -85,18 +87,18 @@ func (repo *dbRepository) GetSitesByUser(user string) ([]UserSite, error) {
 	return sites, nil
 }
 
-func (repo *dbRepository) StoreSiteForUser(user string, sites []UserSite, a Atomic) (err error) {
+func (repo *dbRepository) StoreSiteForUser(user string, sites []UserSite, a per.Atomic) (err error) {
 	var (
-		atomic *Atomic
+		atomic *per.Atomic
 		r      sql.Result
 		c      int64
 	)
 
 	defer func() {
-		err = HandleTX(!a.Active, atomic, err)
+		err = per.HandleTX(!a.Active, atomic, err)
 	}()
 
-	if atomic, err = CheckTX(repo.c, &a); err != nil {
+	if atomic, err = per.CheckTX(repo.c, &a); err != nil {
 		return
 	}
 
@@ -127,17 +129,17 @@ func (repo *dbRepository) StoreSiteForUser(user string, sites []UserSite, a Atom
 	return nil
 }
 
-func (repo *dbRepository) StoreLogin(login Login, a Atomic) (err error) {
+func (repo *dbRepository) StoreLogin(login Login, a per.Atomic) (err error) {
 	var (
-		atomic *Atomic
+		atomic *per.Atomic
 		r      sql.Result
 	)
 
 	defer func() {
-		err = HandleTX(!a.Active, atomic, err)
+		err = per.HandleTX(!a.Active, atomic, err)
 	}()
 
-	if atomic, err = CheckTX(repo.c, &a); err != nil {
+	if atomic, err = per.CheckTX(repo.c, &a); err != nil {
 		return
 	}
 

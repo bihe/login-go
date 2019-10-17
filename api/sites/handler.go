@@ -10,6 +10,8 @@ import (
 	"github.com/bihe/login-go/persistence"
 	"github.com/bihe/login-go/security"
 
+	per "github.com/bihe/commons-go/persistence"
+
 	log "github.com/sirupsen/logrus"
 )
 
@@ -124,7 +126,7 @@ func (h *Handler) SaveSites(a *security.AppContext) {
 			Created:  time.Now().UTC(),
 		})
 	}
-	err = h.repo.StoreSiteForUser(user.Email, sites, persistence.Atomic{})
+	err = h.repo.StoreSiteForUser(user.Email, sites, per.Atomic{})
 	if err != nil {
 		log.Errorf("could not save sites of user '%s': %v", user.Email, err)
 		a.Error(core.ServerError{Err: fmt.Errorf("could not save payload: %v", err), Request: a.Request})

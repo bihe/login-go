@@ -16,6 +16,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/oauth2"
+
+	per "github.com/bihe/commons-go/persistence"
+	sec "github.com/bihe/commons-go/security"
 )
 
 var Err = fmt.Errorf("error")
@@ -137,8 +140,8 @@ type mockRepository struct {
 	fail bool
 }
 
-func (m *mockRepository) CreateAtomic() (persistence.Atomic, error) {
-	return persistence.Atomic{}, nil
+func (m *mockRepository) CreateAtomic() (per.Atomic, error) {
+	return per.Atomic{}, nil
 }
 
 func (m *mockRepository) GetSitesByUser(user string) ([]persistence.UserSite, error) {
@@ -156,11 +159,11 @@ func (m *mockRepository) GetSitesByUser(user string) ([]persistence.UserSite, er
 	}, nil
 }
 
-func (m *mockRepository) StoreSiteForUser(user string, sites []persistence.UserSite, a persistence.Atomic) (err error) {
+func (m *mockRepository) StoreSiteForUser(user string, sites []persistence.UserSite, a per.Atomic) (err error) {
 	return nil
 }
 
-func (m *mockRepository) StoreLogin(login persistence.Login, a persistence.Atomic) (err error) {
+func (m *mockRepository) StoreLogin(login persistence.Login, a per.Atomic) (err error) {
 	return nil
 }
 
@@ -235,7 +238,7 @@ var jwtOpts = security.JwtOptions{
 	JwtSecret:  "secret",
 	JwtIssuer:  "issuer",
 	CookieName: "cookie",
-	RequiredClaim: security.Claim{
+	RequiredClaim: sec.Claim{
 		Name:  "claim",
 		URL:   "http://localhost:3000",
 		Roles: []string{"role"},

@@ -10,17 +10,19 @@ import (
 
 	"github.com/bihe/login-go/core"
 	"github.com/gin-gonic/gin"
+
+	sec "github.com/bihe/commons-go/security"
 )
 
 // JWTMiddleware is used to authenticate a user based on a token
 // the token is either retrieved by the well known Authorization header
 // or fetched from a cookie
 func JWTMiddleware(options JwtOptions) gin.HandlerFunc {
-	cache := newMemCache(parseDuration(options.CacheDuration))
+	cache := sec.NewMemCache(parseDuration(options.CacheDuration))
 	return handleJWT(options, cache)
 }
 
-func handleJWT(options JwtOptions, cache *memoryCache) gin.HandlerFunc {
+func handleJWT(options JwtOptions, cache *sec.MemoryCache) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var (
 			err   error
@@ -47,8 +49,8 @@ func handleJWT(options JwtOptions, cache *memoryCache) gin.HandlerFunc {
 		}
 
 		// to speed up processing use the cache for token lookups
-		var user User
-		u := cache.get(token)
+		var user sec.User
+		u := cache.Get(token)
 		if u != nil {
 			// cache hit, put the user in the context
 			log.Debug("Cache HIT!")
@@ -59,8 +61,8 @@ func handleJWT(options JwtOptions, cache *memoryCache) gin.HandlerFunc {
 
 		log.Debug("Cache MISS!")
 
-		var payload JwtTokenPayload
-		if payload, err = ParseJwtToken(token, options.JwtSecret, options.JwtIssuer); err != nil {
+		var payload sec.JwtTokenPayload
+		if payload, err = sec.ParseJwtToken(token, options.JwtSecret, options.JwtIssuer); err != nil {
 			log.Warnf("Could not decode the JWT token payload: %s", err)
 			c.Error(core.RedirectError{
 				Status:  http.StatusUnauthorized,
@@ -72,7 +74,8 @@ func handleJWT(options JwtOptions, cache *memoryCache) gin.HandlerFunc {
 			return
 		}
 		var roles []string
-		if roles, err = Authorize(options.RequiredClaim, payload.Claims); err != nil {
+		claim := options.RequiredClaim
+		if roles, err = sec.Authorize(sec.Claim{Name: claim.Name, URL: claim.URL, Roles: claim.Roles}, payload.Claims); err != nil {
 			log.Warnf("Insufficient permissions to access the resource: %s", err)
 			c.Error(core.RedirectError{
 				Status:  http.StatusForbidden,
@@ -84,7 +87,7 @@ func handleJWT(options JwtOptions, cache *memoryCache) gin.HandlerFunc {
 			return
 		}
 
-		user = User{
+		user = sec.User{
 			DisplayName:   payload.DisplayName,
 			Email:         payload.Email,
 			Roles:         roles,
@@ -92,7 +95,7 @@ func handleJWT(options JwtOptions, cache *memoryCache) gin.HandlerFunc {
 			Username:      payload.UserName,
 			Authenticated: true,
 		}
-		cache.set(token, &user)
+		cache.Set(token, &user)
 		c.Set(core.User, user)
 
 		c.Next()

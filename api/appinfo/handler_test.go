@@ -10,6 +10,8 @@ import (
 	"github.com/bihe/login-go/security"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
+
+	sec "github.com/bihe/commons-go/security"
 )
 
 func TestGetAppInfo(t *testing.T) {
@@ -23,7 +25,7 @@ func TestGetAppInfo(t *testing.T) {
 	}
 
 	r.Use(func(c *gin.Context) {
-		c.Set(core.User, security.User{
+		c.Set(core.User, sec.User{
 			Username:    "username",
 			Email:       "a.b@c.de",
 			DisplayName: "displayname",

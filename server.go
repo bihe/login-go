@@ -15,8 +15,9 @@ import (
 
 	"github.com/bihe/login-go/api"
 	"github.com/bihe/login-go/core"
-	"github.com/bihe/login-go/persistence"
 	"github.com/gin-gonic/gin"
+
+	per "github.com/bihe/commons-go/persistence"
 )
 
 var (
@@ -126,7 +127,7 @@ func setupAPIServer() (*gin.Engine, string) {
 		Build:   Build,
 		Runtime: Runtime,
 	}
-	con := persistence.NewConn(c.DB.ConnStr)
+	con := per.NewConn(c.DB.ConnStr)
 	api.RegisterRoutes(r, c, version, con)
 
 	return r, fmt.Sprintf("%s:%d", args.HostName, args.Port)

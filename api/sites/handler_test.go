@@ -13,6 +13,9 @@ import (
 	"github.com/bihe/login-go/security"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
+
+	per "github.com/bihe/commons-go/persistence"
+	sec "github.com/bihe/commons-go/security"
 )
 
 var Err = fmt.Errorf("error")
@@ -32,8 +35,8 @@ type mockRepository struct {
 	fail bool
 }
 
-func (m mockRepository) CreateAtomic() (persistence.Atomic, error) {
-	return persistence.Atomic{}, nil
+func (m mockRepository) CreateAtomic() (per.Atomic, error) {
+	return per.Atomic{}, nil
 }
 
 func (m mockRepository) GetSitesByUser(user string) ([]persistence.UserSite, error) {
@@ -51,14 +54,14 @@ func (m mockRepository) GetSitesByUser(user string) ([]persistence.UserSite, err
 	}, nil
 }
 
-func (m mockRepository) StoreSiteForUser(user string, sites []persistence.UserSite, a persistence.Atomic) (err error) {
+func (m mockRepository) StoreSiteForUser(user string, sites []persistence.UserSite, a per.Atomic) (err error) {
 	if m.fail {
 		return Err
 	}
 	return nil
 }
 
-func (m mockRepository) StoreLogin(login persistence.Login, a persistence.Atomic) (err error) {
+func (m mockRepository) StoreLogin(login persistence.Login, a per.Atomic) (err error) {
 	return nil
 }
 
@@ -78,7 +81,7 @@ func TestGetSites(t *testing.T) {
 	r := gin.Default()
 
 	r.Use(func(c *gin.Context) {
-		c.Set(core.User, security.User{
+		c.Set(core.User, sec.User{
 			Username:    "username",
 			Email:       "a.b@c.de",
 			DisplayName: "displayname",
@@ -123,7 +126,7 @@ func TestFailSites(t *testing.T) {
 
 	r.Use(core.ApplicationErrorReporter(cookieSettings))
 	r.Use(func(c *gin.Context) {
-		c.Set(core.User, security.User{
+		c.Set(core.User, sec.User{
 			Username:    "username",
 			Email:       "a.b@c.de",
 			DisplayName: "displayname",
@@ -157,7 +160,7 @@ func TestSaveSites(t *testing.T) {
 
 	r.Use(core.ApplicationErrorReporter(cookieSettings))
 	r.Use(func(c *gin.Context) {
-		c.Set(core.User, security.User{
+		c.Set(core.User, sec.User{
 			Username:    "username",
 			Email:       "a.b@c.de",
 			DisplayName: "displayname",
@@ -193,7 +196,7 @@ func TestSaveSitesFail(t *testing.T) {
 
 	r.Use(core.ApplicationErrorReporter(cookieSettings))
 	r.Use(func(c *gin.Context) {
-		c.Set(core.User, security.User{
+		c.Set(core.User, sec.User{
 			Username:    "username",
 			Email:       "a.b@c.de",
 			DisplayName: "displayname",
@@ -234,7 +237,7 @@ func TestSaveSitesNoPayload(t *testing.T) {
 
 	r.Use(core.ApplicationErrorReporter(cookieSettings))
 	r.Use(func(c *gin.Context) {
-		c.Set(core.User, security.User{
+		c.Set(core.User, sec.User{
 			Username:    "username",
 			Email:       "a.b@c.de",
 			DisplayName: "displayname",
@@ -268,7 +271,7 @@ func TestSaveSitesNotAllowed(t *testing.T) {
 
 	r.Use(core.ApplicationErrorReporter(cookieSettings))
 	r.Use(func(c *gin.Context) {
-		c.Set(core.User, security.User{
+		c.Set(core.User, sec.User{
 			Username:    "username",
 			Email:       "a.b@c.de",
 			DisplayName: "displayname",

@@ -8,6 +8,8 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/jmoiron/sqlx"
+
+	per "github.com/bihe/commons-go/persistence"
 )
 
 const fatalErr = "an error '%s' was not expected when opening a stub database connection"
@@ -17,7 +19,7 @@ const errExpected = "error expected!"
 var Err = fmt.Errorf("error")
 
 func TestNewRepository(t *testing.T) {
-	_, err := NewRepository(Connection{})
+	_, err := NewRepository(per.Connection{})
 	if err == nil {
 		t.Errorf("no reader without connection possible")
 	}
@@ -29,7 +31,7 @@ func TestNewRepository(t *testing.T) {
 	defer db.Close()
 
 	dbx := sqlx.NewDb(db, "mysql")
-	_, err = NewRepository(NewFromDB(dbx))
+	_, err = NewRepository(per.NewFromDB(dbx))
 	if err != nil {
 		t.Errorf("could not get a repository: %v", err)
 	}
@@ -43,7 +45,7 @@ func TestAtomic(t *testing.T) {
 	defer db.Close()
 
 	dbx := sqlx.NewDb(db, "mysql")
-	repo, err := NewRepository(NewFromDB(dbx))
+	repo, err := NewRepository(per.NewFromDB(dbx))
 	if err != nil {
 		t.Errorf("could not get a repository: %v", err)
 	}
@@ -69,7 +71,7 @@ func TestGetSiteByUser(t *testing.T) {
 	defer db.Close()
 
 	dbx := sqlx.NewDb(db, "mysql")
-	c := NewFromDB(dbx)
+	c := per.NewFromDB(dbx)
 	repo := dbRepository{c}
 
 	q := "SELECT name,user,url,permission_list,created FROM USERSITE"
@@ -127,7 +129,7 @@ func TestStoreSiteForUser(t *testing.T) {
 	defer db.Close()
 
 	dbx := sqlx.NewDb(db, "mysql")
-	c := NewFromDB(dbx)
+	c := per.NewFromDB(dbx)
 	repo := dbRepository{c}
 
 	errSites := "could not save user-sites: %v"
@@ -151,7 +153,7 @@ func TestStoreSiteForUser(t *testing.T) {
 	mock.ExpectExec(stmt).WithArgs(sites[0].Name, sites[0].User, sites[0].URL, sites[0].PermList, sites[0].Created).WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 
-	err = repo.StoreSiteForUser(username, sites, Atomic{})
+	err = repo.StoreSiteForUser(username, sites, per.Atomic{})
 	if err != nil {
 		t.Errorf(errSites, err)
 	}
@@ -172,7 +174,7 @@ func TestStoreSiteForUser(t *testing.T) {
 	mock.ExpectExec(del).WithArgs(username).WillReturnError(Err)
 	mock.ExpectRollback()
 
-	err = repo.StoreSiteForUser(username, sites, Atomic{})
+	err = repo.StoreSiteForUser(username, sites, per.Atomic{})
 	if err == nil {
 		t.Errorf(errExpected)
 	}
@@ -183,7 +185,7 @@ func TestStoreSiteForUser(t *testing.T) {
 	mock.ExpectExec(stmt).WithArgs(sites[0].Name, sites[0].User, sites[0].URL, sites[0].PermList, sites[0].Created).WillReturnError(Err)
 	mock.ExpectRollback()
 
-	err = repo.StoreSiteForUser(username, sites, Atomic{})
+	err = repo.StoreSiteForUser(username, sites, per.Atomic{})
 	if err == nil {
 		t.Errorf(errExpected)
 	}
@@ -194,7 +196,7 @@ func TestStoreSiteForUser(t *testing.T) {
 	mock.ExpectExec(stmt).WithArgs(sites[0].Name, sites[0].User, sites[0].URL, sites[0].PermList, sites[0].Created).WillReturnResult(sqlmock.NewResult(0, 0))
 	mock.ExpectRollback()
 
-	err = repo.StoreSiteForUser(username, sites, Atomic{})
+	err = repo.StoreSiteForUser(username, sites, per.Atomic{})
 	if err == nil {
 		t.Errorf(errExpected)
 	}
@@ -205,7 +207,7 @@ func TestStoreSiteForUser(t *testing.T) {
 	mock.ExpectExec(stmt).WithArgs(sites[0].Name, sites[0].User, sites[0].URL, sites[0].PermList, sites[0].Created).WillReturnResult(sqlmock.NewErrorResult(Err))
 	mock.ExpectRollback()
 
-	err = repo.StoreSiteForUser(username, sites, Atomic{})
+	err = repo.StoreSiteForUser(username, sites, per.Atomic{})
 	if err == nil {
 		t.Errorf(errExpected)
 	}
@@ -224,7 +226,7 @@ func TestStoreLogin(t *testing.T) {
 	defer db.Close()
 
 	dbx := sqlx.NewDb(db, "mysql")
-	c := NewFromDB(dbx)
+	c := per.NewFromDB(dbx)
 	repo := dbRepository{c}
 
 	errLogin := "could not save login: %v"
@@ -237,7 +239,7 @@ func TestStoreLogin(t *testing.T) {
 	mock.ExpectExec(stmt).WithArgs(login.User, login.Created, login.Type).WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 
-	err = repo.StoreLogin(login, Atomic{})
+	err = repo.StoreLogin(login, per.Atomic{})
 	if err != nil {
 		t.Errorf(errLogin, err)
 	}
@@ -247,7 +249,7 @@ func TestStoreLogin(t *testing.T) {
 	mock.ExpectExec(stmt).WillReturnError(Err)
 	mock.ExpectRollback()
 
-	err = repo.StoreLogin(login, Atomic{})
+	err = repo.StoreLogin(login, per.Atomic{})
 	if err == nil {
 		t.Errorf(errExpected)
 	}
@@ -257,7 +259,7 @@ func TestStoreLogin(t *testing.T) {
 	mock.ExpectExec(stmt).WithArgs(login.User, login.Created, login.Type).WillReturnResult(sqlmock.NewErrorResult(Err))
 	mock.ExpectRollback()
 
-	err = repo.StoreLogin(login, Atomic{})
+	err = repo.StoreLogin(login, per.Atomic{})
 	if err == nil {
 		t.Errorf(errExpected)
 	}
@@ -267,7 +269,7 @@ func TestStoreLogin(t *testing.T) {
 	mock.ExpectExec(stmt).WithArgs(login.User, login.Created, login.Type).WillReturnResult(sqlmock.NewResult(0, 0))
 	mock.ExpectRollback()
 
-	err = repo.StoreLogin(login, Atomic{})
+	err = repo.StoreLogin(login, per.Atomic{})
 	if err == nil {
 		t.Errorf(errExpected)
 	}
