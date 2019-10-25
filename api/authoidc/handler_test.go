@@ -259,7 +259,7 @@ func TestLogout(t *testing.T) {
 
 	// request
 	h := GetHandler()
-	r.GET(logout, h.Logout)
+	r.GET(logout, security.W(h.Logout))
 	req := httptest.NewRequest(http.MethodGet, logout, nil)
 	req.AddCookie(&http.Cookie{Name: "cookie", Value: token})
 	c.Request = req

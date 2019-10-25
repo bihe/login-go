@@ -70,7 +70,7 @@ func RegisterRoutes(r *gin.Engine, config core.Configuration, version core.Versi
 	}))
 
 	// logout has to be "after" the JWT middleware
-	r.GET("/logout", oidcH.Logout)
+	r.GET("/logout", security.W(oidcH.Logout))
 
 	// swagger doc
 	url := ginSwagger.URL("/swagger/doc.json")

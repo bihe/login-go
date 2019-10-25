@@ -27,3 +27,8 @@ func (a *AppContext) HasRole(role string) bool {
 	}
 	return false
 }
+
+// GinContext returns the underlying context implementation
+func (a *AppContext) GinContext() *gin.Context {
+	return a.Context
+}

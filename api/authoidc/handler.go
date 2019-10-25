@@ -13,6 +13,7 @@ import (
 
 	"github.com/bihe/login-go/core"
 	"github.com/bihe/login-go/persistence"
+	"github.com/bihe/login-go/security"
 	"github.com/gin-gonic/gin"
 
 	log "github.com/sirupsen/logrus"
@@ -117,6 +118,9 @@ func NewHandler(v core.VersionInfo, c core.OAuthConfig, s core.Security, cookie 
 func (h *Handler) GetRedirect(c *gin.Context) {
 	state := randToken()
 	h.setAppCookie(stateParam, state, c)
+
+	log.Debugf("GetRedirect: initiate using state '%s'", state)
+
 	c.Redirect(http.StatusFound, h.oauthConfig.AuthCodeURL(state))
 }
 
@@ -129,6 +133,8 @@ const authFlowSep = "|"
 func (h *Handler) AuthFlow(c *gin.Context) {
 	state := randToken()
 	h.setAppCookie(stateParam, state, c)
+
+	log.Debugf("AuthFlow: initiate using state '%s'", state)
 
 	site, redirect := c.Query(siteParam), c.Query(redirectParam)
 	if site == "" || redirect == "" {
@@ -148,7 +154,7 @@ func (h *Handler) Signin(c *gin.Context) {
 
 	// read the stateParam again
 	state := h.getAppCookie(stateParam, c)
-	log.Debugf("got state param: %s", state)
+	log.Debugf("Signin: got state param: %s", state)
 
 	if c.Query(stateParam) != state {
 		c.Error(core.BadRequestError{Err: fmt.Errorf("state did not match"), Request: c.Request})
@@ -163,7 +169,7 @@ func (h *Handler) Signin(c *gin.Context) {
 	)
 	authFlowParams := h.getAppCookie(authFlowCookie, c)
 	if authFlowParams != "" {
-		log.Debugf("auth/flow login-mode")
+		log.Debugf("Signin: auth/flow login-mode")
 		parts := strings.Split(authFlowParams, "|")
 		site = parts[0]
 		redirect = parts[1]
@@ -207,17 +213,17 @@ func (h *Handler) Signin(c *gin.Context) {
 	success := true
 	sites, err := h.repo.GetSitesByUser(oidcClaims.Email)
 	if err != nil {
-		log.Warnf("successfull login by '%s' but error fetching sites! %v", oidcClaims.Email, err)
+		log.Warnf("Signin: successfull login by '%s' but error fetching sites! %v", oidcClaims.Email, err)
 		success = false
 	}
 
 	if sites == nil || len(sites) == 0 {
-		log.Warnf("successfull login by '%s' but no sites availabel!", oidcClaims.Email)
+		log.Warnf("Signin: successfull login by '%s' but no sites availabel!", oidcClaims.Email)
 		success = false
 	}
 
 	if authFlow {
-		log.Debugf("auth/flow - check for specific site '%s'", site)
+		log.Debugf("Signin: auth/flow - check for specific site '%s'", site)
 		success = false
 		// check specific site
 		for _, e := range sites {
@@ -253,7 +259,7 @@ func (h *Handler) Signin(c *gin.Context) {
 	}
 	token, err := sec.CreateToken(h.jwt.JwtIssuer, []byte(h.jwt.JwtSecret), h.jwt.Expiry, claims)
 	if err != nil {
-		log.Errorf("could not create a JWT token: %v", err)
+		log.Errorf("Signin: could not create a JWT token: %v", err)
 		c.Error(core.ServerError{Err: fmt.Errorf("error creating JWT: %v", err), Request: c.Request})
 		return
 	}
@@ -270,7 +276,7 @@ func (h *Handler) Signin(c *gin.Context) {
 
 	err = h.repo.StoreLogin(login, per.Atomic{})
 	if err != nil {
-		log.Errorf("the login could not be saved: %v", err)
+		log.Errorf("Signin: the login could not be saved: %v", err)
 		c.Error(core.ServerError{Err: fmt.Errorf("error storing the login: %v", err), Request: c.Request})
 		return
 	}
@@ -281,8 +287,8 @@ func (h *Handler) Signin(c *gin.Context) {
 
 	redirectURL := h.jwt.LoginRedirect
 	if authFlow {
-		log.Debugf("auth/flow - redirect to specific URL: '%s'", redirect)
-		redirectURL = fmt.Sprintf("%s", redirect)
+		log.Debugf("Signin: auth/flow - redirect to specific URL: '%s'", redirect)
+		redirectURL = redirect
 	}
 
 	// redirect to provided URL
@@ -290,15 +296,17 @@ func (h *Handler) Signin(c *gin.Context) {
 }
 
 // Logout invalidates the authenticated user
-func (h *Handler) Logout(c *gin.Context) {
-	user := c.MustGet(core.User).(sec.User)
+func (h *Handler) Logout(a *security.AppContext) {
+	user := a.User()
+
+	log.Debugf("Logout: for user '%s'", user.Username)
 
 	// remove the cookie by expiring it
-	h.setJWTCookie(h.jwt.CookieName, "", -1, c)
-	h.setAppCookie(core.FlashKeyInfo, fmt.Sprintf("User '%s' was logged-off!", user.Email), c)
+	h.setJWTCookie(h.jwt.CookieName, "", -1, a.GinContext())
+	h.setAppCookie(core.FlashKeyInfo, fmt.Sprintf("User '%s' was logged-off!", user.Email), a.GinContext())
 
-	c.Abort()
-	c.Redirect(http.StatusTemporaryRedirect, h.jwt.LoginRedirect+core.ErrorPath)
+	a.Abort()
+	a.Redirect(http.StatusTemporaryRedirect, h.jwt.LoginRedirect+core.ErrorPath)
 }
 
 // Error returns a HTML template showing errors

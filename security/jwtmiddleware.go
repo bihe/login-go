@@ -53,13 +53,10 @@ func handleJWT(options JwtOptions, cache *sec.MemoryCache) gin.HandlerFunc {
 		u := cache.Get(token)
 		if u != nil {
 			// cache hit, put the user in the context
-			log.Debug("Cache HIT!")
 			c.Set(core.User, *u)
 			c.Next()
 			return
 		}
-
-		log.Debug("Cache MISS!")
 
 		var payload sec.JwtTokenPayload
 		if payload, err = sec.ParseJwtToken(token, options.JwtSecret, options.JwtIssuer); err != nil {
