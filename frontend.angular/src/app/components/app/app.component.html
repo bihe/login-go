@@ -1,7 +1,14 @@
-<div class="grid">
-  <app-header></app-header>
-  <main>
-    <router-outlet></router-outlet>
-  </main>
-  <app-footer></app-footer>
+<app-header></app-header>
+
+<div class="appcontent container-fluid" style="height:100%">
+    <div class="row contentArea">
+        <div class='col-sm-12 body-content'>
+            <router-outlet></router-outlet>
+        </div>
+    </div>
 </div>
+
+<app-footer></app-footer>
+
+
+

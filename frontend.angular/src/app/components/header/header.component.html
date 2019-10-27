@@ -12,7 +12,7 @@
             </mat-progress-spinner>
 
             <span class="header__icon" (click)="toggleMenu(true)">
-                <svg class="" width="24px" height="24px" viewBox="0 0 48 48" fill="#fff">
+                <svg class="" width="24px" height="24px" viewBox="0 0 48 48" fill="#ffffff">
                 <path d="M6 36h36v-4H6v4zm0-10h36v-4H6v4zm0-14v4h36v-4H6z"></path>
                 </svg>
             </span>
@@ -20,13 +20,15 @@
 
         <!-- INFO -->
         <div class="navinfo">
-          <i class="fa fa-lock"></i> login.binggl.net
+          <i class="fa fa-user-circle-o" aria-hidden="true"></i> login.binggl.net
         </div>
 
         <!-- ACTIONS -->
         <div class="navactions">
-
-
+           <!-- USER -->
+           <span *ngIf="appInfo" title="{{ appInfo?.displayName }}" class="hidden-xs">
+              <i class="fa fa-sign-out" aria-hidden="true"></i>&nbsp;<a class="link" href="https://login.binggl.net" matTooltip="{{ appInfo?.userName }} ({{ appInfo?.email }})">{{ appInfo?.displayName }}</a>
+             </span>
         </div>
     </div>
 </div>

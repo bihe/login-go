@@ -1,15 +1,10 @@
-footer {
-  font-family: monospace;
-  font-size: 1.2em;
-  color: #777;
+.footer {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    background-color: #f5f5f5;
 }
-
-.footer__details {
-  display: none;
-}
-
-@media (min-width: 530px) {
-  .footer__details {
-    display: inline;
-  }
+.container-fluid .text-muted {
+    margin: 7px 0;
+    font-size: 0.92em;
 }

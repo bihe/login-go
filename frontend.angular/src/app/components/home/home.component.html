@@ -1,22 +1,31 @@
+<div class="card_content">
     <div class="heading">
-      <p>Central login for all binggl.net applications.</p>
+      <h1 class="display-3">Central login for all binggl.net applications.</h1>
     </div>
 
     <section class="card-container">
 
       <article class="card" *ngFor="let item of userInfo?.userSites" id="{{ item.name }}">
           <header class="card__title">
-              <h3><i class="fa fa-external-link" aria-hidden="true"></i>&nbsp;<a href="{{ item.url }}">{{ item.name }}</a></h3>
+              <h5><i class="fa fa-external-link" aria-hidden="true"></i>&nbsp;<a href="{{ item.url }}">{{ item.name }}</a></h5>
           </header>
           <main class="card__description">
-              <a href="{{ item.url }}">{{ item.url }}</a>
+              URL: <a href="{{ item.url }}">{{ item.url }}</a>
           </main>
           <footer>
-            <span *ngFor="let perm of item?.permissions" class="permission"><i class="fa fa-lock" aria-hidden="true"></i>&nbsp;{{ perm | ellipsis:9 }}</span>
+            <mat-chip-list>
+                <mat-chip *ngFor="let perm of item?.permissions">
+                  <span class="permission">
+                    <i class="fa fa-hashtag" aria-hidden="true"></i>&nbsp;{{ perm | ellipsis: 15 }}
+                  </span>
+                </mat-chip>
+            </mat-chip-list>
+
           </footer>
       </article>
 
     </section>
 
 
-    <button *ngIf="userInfo?.editable" mat-fab color="accent" class="edit" (click)="edit()"><i class="fa fa-cogs" aria-hidden="true"></i></button>
+    <button *ngIf="userInfo?.editable" mat-fab color="accent" class="edit" (click)="edit()"><i class="fa fa-cogs fa-2x" aria-hidden="true"></i></button>
+  </div>
