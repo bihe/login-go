@@ -293,6 +293,7 @@ func (h *Handler) Signin(c *gin.Context) {
 
 	// redirect to provided URL
 	c.Redirect(http.StatusTemporaryRedirect, redirectURL)
+	c.Abort()
 }
 
 // Logout invalidates the authenticated user
