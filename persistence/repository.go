@@ -63,6 +63,9 @@ func NewRepository(c per.Connection) (Repository, error) {
 // Repository implementation
 // --------------------------------------------------------------------------
 
+// compile time check, that interface is implemented
+var _ Repository = (*dbRepository)(nil)
+
 type dbRepository struct {
 	c per.Connection
 }
