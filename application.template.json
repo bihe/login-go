@@ -34,5 +34,5 @@
 		"path": "/",
 		"secure": true,
 		"prefix": "prefix"
-	}
+  }
 }

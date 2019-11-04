@@ -8,6 +8,7 @@ require (
 	github.com/bihe/commons-go v1.0.2
 	github.com/coreos/go-oidc v2.1.0+incompatible
 	github.com/gin-gonic/gin v1.4.0
+	github.com/go-chi/chi v4.0.2+incompatible
 	github.com/go-openapi/jsonreference v0.19.3 // indirect
 	github.com/go-openapi/spec v0.19.3 // indirect
 	github.com/go-sql-driver/mysql v1.4.0
@@ -25,10 +26,13 @@ require (
 	github.com/swaggo/gin-swagger v1.2.0
 	github.com/swaggo/swag v1.6.3
 	github.com/ugorji/go v1.1.7 // indirect
+	github.com/wangii/emoji v0.0.0-20150519084846-d15b69a4831e
 	golang.org/x/crypto v0.0.0-20190927123631-a832865fa7ad // indirect
 	golang.org/x/net v0.0.0-20191009170851-d66e71096ffb // indirect
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 	golang.org/x/tools v0.0.0-20191010201905-e5ffc44a6fee // indirect
+	google.golang.org/appengine v1.4.0
+	gopkg.in/go-playground/assert.v1 v1.2.1
 	gopkg.in/square/go-jose.v2 v2.3.1 // indirect
 	gopkg.in/yaml.v2 v2.2.4 // indirect
 )
