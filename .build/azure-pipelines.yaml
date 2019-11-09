@@ -53,7 +53,7 @@ steps:
   displayName: 'Run unit tests'
 
 - script: |
-    go build -v
+    go build -v cmd/server/main.go
   workingDirectory: '$(modulePath)'
   continueOnError: false
   displayName: 'Build App: login-go'
