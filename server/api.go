@@ -10,7 +10,9 @@ import (
 	"github.com/bihe/login-go/internal/config"
 	"github.com/bihe/login-go/internal/cookies"
 	"github.com/bihe/login-go/internal/errors"
+	"github.com/bihe/login-go/internal/persistence"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/oauth2"
 )
 
 // API uses handlers to respond to HTTP requests
@@ -18,16 +20,32 @@ type API struct {
 	internal.VersionInfo
 	errRep         *errors.ErrorReporter
 	cookieSettings cookies.Settings
+	appCookie      *cookies.AppCookie
 	basePath       string
+
+	// oidc objects
+	oauthConfig   *oauth2.Config
+	oauthVerifier OIDCVerifier
+
+	// store
+	repo persistence.Repository
+	// jwt logic
+	jwt config.Security
 }
 
 // NewAPI creates a new instance of the API type
-func NewAPI(basePath string, cookies cookies.Settings, version internal.VersionInfo) *API {
+func NewAPI(basePath string, cs cookies.Settings, version internal.VersionInfo, oauth config.OAuthConfig, jwt config.Security, repo persistence.Repository) *API {
+	c, v := NewOIDC(oauth)
 	api := API{
 		VersionInfo:    version,
-		cookieSettings: cookies,
-		errRep:         errors.NewReporter(cookies),
+		cookieSettings: cs,
+		errRep:         errors.NewReporter(cs),
+		appCookie:      cookies.NewAppCookie(cs),
 		basePath:       basePath,
+		oauthConfig:    c,
+		oauthVerifier:  v,
+		repo:           repo,
+		jwt:            jwt,
 	}
 	return &api
 }

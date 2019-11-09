@@ -8,28 +8,15 @@ import (
 	"testing"
 
 	sec "github.com/bihe/commons-go/security"
-	"github.com/bihe/login-go/internal"
 	"github.com/bihe/login-go/internal/config"
-	"github.com/bihe/login-go/internal/cookies"
 	"github.com/bihe/login-go/internal/errors"
 	"github.com/go-chi/chi"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGetAppInfo(t *testing.T) {
-	version := internal.VersionInfo{
-		Version: "1",
-		Build:   "2",
-		Runtime: "r",
-	}
-	cookieSettings := cookies.Settings{
-		Path:   "/",
-		Domain: "localhost",
-		Secure: false,
-		Prefix: "__",
-	}
 	r := chi.NewRouter()
-	api := NewAPI("templatepath", cookieSettings, version)
+	api := NewAPI("templatepath", cookieSettings, version, oauthConfig, jwtConfig, &mockRepository{})
 
 	r.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -62,20 +49,8 @@ func TestGetAppInfo(t *testing.T) {
 }
 
 func TestGetAppInfoNilUser(t *testing.T) {
-	version := internal.VersionInfo{
-		Version: "1",
-		Build:   "2",
-		Runtime: "r",
-	}
-	cookieSettings := cookies.Settings{
-		Path:   "/",
-		Domain: "localhost",
-		Secure: false,
-		Prefix: "__",
-	}
-
 	r := chi.NewRouter()
-	api := NewAPI("templatepath", cookieSettings, version)
+	api := NewAPI("templatepath", cookieSettings, version, oauthConfig, jwtConfig, &mockRepository{})
 	r.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := context.WithValue(r.Context(), config.User, nil)

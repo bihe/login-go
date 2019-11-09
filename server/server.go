@@ -10,10 +10,13 @@ import (
 	"syscall"
 	"time"
 
+	_ "github.com/go-sql-driver/mysql" // import the mysql driver
+
 	"github.com/bihe/login-go/internal"
 	"github.com/bihe/login-go/internal/config"
 	"github.com/wangii/emoji"
 
+	per "github.com/bihe/commons-go/persistence"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -60,8 +63,10 @@ func setupServer() *http.Server {
 		Build:   Build,
 		Runtime: Runtime,
 	}
-	r := NewRouter(args.BasePath, config, version)
+	con := per.NewConn(config.DB.ConnStr)
+	r := NewRouter(args.BasePath, config, version, con)
 	//setupLog(r, c)
+	log.SetLevel(log.DebugLevel)
 	addr := fmt.Sprintf("%s:%d", args.HostName, args.Port)
 	srv := &http.Server{Addr: addr, Handler: r}
 	return srv
@@ -94,6 +99,11 @@ func parseFlags() *Args {
 }
 
 func configFromFile(configFileName string) config.AppConfig {
+	if !fileExists(configFileName) {
+		// if the given filename does not exists, use the filename from an environment variable
+		// if that fails as well, the logic will panic below
+		configFileName = os.Getenv("CONFIG_FILE_NAME")
+	}
 	f, err := os.Open(configFileName)
 	if err != nil {
 		panic(fmt.Sprintf("Could not open specific config file '%s': %v", configFileName, err))
@@ -105,4 +115,12 @@ func configFromFile(configFileName string) config.AppConfig {
 		panic(fmt.Sprintf("Could not get server config values from file '%s': %v", configFileName, err))
 	}
 	return *c
+}
+
+func fileExists(filename string) bool {
+	_, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return true
 }

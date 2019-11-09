@@ -10,15 +10,17 @@ import (
 	"github.com/bihe/login-go/internal"
 	"github.com/bihe/login-go/internal/config"
 	"github.com/bihe/login-go/internal/cookies"
+	"github.com/bihe/login-go/internal/persistence"
 	"github.com/bihe/login-go/internal/security"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 
+	per "github.com/bihe/commons-go/persistence"
 	sec "github.com/bihe/commons-go/security"
 )
 
 // NewRouter instantiates a new router type
-func NewRouter(basePath string, config config.AppConfig, version internal.VersionInfo) chi.Router {
+func NewRouter(basePath string, config config.AppConfig, version internal.VersionInfo, con per.Connection) chi.Router {
 	r := chi.NewRouter()
 
 	base, err := filepath.Abs(basePath)
@@ -59,14 +61,23 @@ func NewRouter(basePath string, config config.AppConfig, version internal.Versio
 		Prefix: config.AppCookies.Prefix,
 	}
 
-	api := NewAPI(base, cookieSettings, version)
+	repo, err := persistence.NewRepository(con)
+	if err != nil {
+		panic(fmt.Sprintf("could not create a repository: %v", err))
+	}
+	api := NewAPI(base, cookieSettings, version, config.OIDC, config.Sec, repo)
 
 	r.Get("/error", api.call(api.handleError))
+	r.Get("/oidc", api.call(api.handleOIDCRedirect))
+	r.Get("/signin-oidc", api.call(api.handleOIDCLogin))
+	r.Get("/auth/flow", api.call(api.handleAuthFlow))
 
 	// this group "indicates" that all routes within this group use the JWT authentication
 	r.Group(func(r chi.Router) {
 		// authenticate and authorize users via JWT
 		r.Use(security.NewJwtMiddleware(jwtOpts, cookieSettings).JwtContext)
+
+		r.Get("/logout", api.secure(api.handleLogout))
 
 		// group API methods together
 		r.Route("/api/v1", func(r chi.Router) {
