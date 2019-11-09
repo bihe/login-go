@@ -1,32 +1,26 @@
 package server
 
 import (
-	"fmt"
 	"net/http"
+	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
 
-	"github.com/bihe/login-go/internal"
-	"github.com/bihe/login-go/internal/config"
 	"github.com/bihe/login-go/internal/cookies"
-	"github.com/bihe/login-go/internal/persistence"
 	"github.com/bihe/login-go/internal/security"
+	"github.com/bihe/login-go/server/api"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 
-	per "github.com/bihe/commons-go/persistence"
-	sec "github.com/bihe/commons-go/security"
+	_ "github.com/bihe/login-go/docs" // import the swagger documentation
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 // NewRouter instantiates a new router type
-func NewRouter(basePath string, config config.AppConfig, version internal.VersionInfo, con per.Connection) chi.Router {
+func NewRouter(basePath string, a api.API, cookieSettings cookies.Settings, jwtOpts security.JwtOptions) chi.Router {
 	r := chi.NewRouter()
-
-	base, err := filepath.Abs(basePath)
-	if err != nil {
-		panic(fmt.Sprintf("cannot resolve basepath '%s', %v", basePath, err))
-	}
 
 	// A good base middleware stack
 	r.Use(middleware.RequestID)
@@ -38,73 +32,66 @@ func NewRouter(basePath string, config config.AppConfig, version internal.Versio
 	r.Use(middleware.Timeout(60 * time.Second))
 
 	// serving static content
-	serveStaticFile(r, "/favicon.ico", filepath.Join(base, "./assets/favicon.ico"))
-	serveStaticDir(r, "/assets", http.Dir(filepath.Join(base, "./assets")))
+	serveStaticFile(r, "/favicon.ico", filepath.Join(basePath, "./assets/favicon.ico"))
+	serveStaticDir(r, "/assets", http.Dir(filepath.Join(basePath, "./assets")))
 
-	// configure JWT authentication and use JWT middleware
-	jwtOpts := security.JwtOptions{
-		JwtSecret:  config.Sec.JwtSecret,
-		JwtIssuer:  config.Sec.JwtIssuer,
-		CookieName: config.Sec.CookieName,
-		RequiredClaim: sec.Claim{
-			Name:  config.Sec.Claim.Name,
-			URL:   config.Sec.Claim.URL,
-			Roles: config.Sec.Claim.Roles,
-		},
-		RedirectURL:   config.Sec.LoginRedirect,
-		CacheDuration: config.Sec.CacheDuration,
-	}
-	cookieSettings := cookies.Settings{
-		Path:   config.AppCookies.Path,
-		Domain: config.AppCookies.Domain,
-		Secure: config.AppCookies.Secure,
-		Prefix: config.AppCookies.Prefix,
-	}
-
-	repo, err := persistence.NewRepository(con)
-	if err != nil {
-		panic(fmt.Sprintf("could not create a repository: %v", err))
-	}
-	api := NewAPI(base, cookieSettings, version, config.OIDC, config.Sec, repo)
-
-	r.Get("/error", api.call(api.handleError))
-	r.Get("/oidc", api.call(api.handleOIDCRedirect))
-	r.Get("/signin-oidc", api.call(api.handleOIDCLogin))
-	r.Get("/auth/flow", api.call(api.handleAuthFlow))
+	r.Get("/error", a.Call(a.HandleError))
+	r.Get("/oidc", a.Call(a.HandleOIDCRedirect))
+	r.Get("/signin-oidc", a.Call(a.HandleOIDCLogin))
+	r.Get("/auth/flow", a.Call(a.HandleAuthFlow))
 
 	// this group "indicates" that all routes within this group use the JWT authentication
 	r.Group(func(r chi.Router) {
 		// authenticate and authorize users via JWT
 		r.Use(security.NewJwtMiddleware(jwtOpts, cookieSettings).JwtContext)
 
-		r.Get("/logout", api.secure(api.handleLogout))
+		r.Get("/logout", a.Secure(a.HandleLogout))
 
 		// group API methods together
 		r.Route("/api/v1", func(r chi.Router) {
-			r.Get("/appinfo", api.secure(api.handleAppInfoGet))
+			r.Get("/appinfo", a.Secure(a.HandleAppInfo))
+			r.Get("/sites", a.Secure(a.HandleGetSites))
+			r.Post("/sites", a.Secure(a.HandleSaveSites))
 		})
-
 		// the SPA
 		serveStaticDir(r, "/ui", http.Dir(filepath.Join(basePath, "./assets/ui")))
+
+		// swagger
+		r.Get("/swagger/*", httpSwagger.Handler(
+			httpSwagger.URL("/swagger/doc.json"), //The url pointing to API definition"
+		))
 	})
+
+	r.Get("/", http.RedirectHandler("/ui", http.StatusMovedPermanently).ServeHTTP)
 
 	return r
 }
 
-func serveStaticDir(r chi.Router, path string, root http.FileSystem) {
-	if path == "" {
-		panic("no path for fileServer defined!")
+func serveStaticDir(r chi.Router, public string, static http.Dir) {
+	if strings.ContainsAny(public, "{}*") {
+		panic("FileServer does not permit URL parameters.")
 	}
-	if strings.ContainsAny(path, "{}*") {
-		panic("fileServer does not permit URL parameters.")
+
+	root, _ := filepath.Abs(string(static))
+	if _, err := os.Stat(root); os.IsNotExist(err) {
+		panic("Static Documents Directory Not Found")
 	}
-	fs := http.StripPrefix(path, http.FileServer(root))
-	// add a slash to the end of the path
-	if path != "/" && path[len(path)-1] != '/' {
-		path += "/"
-	}
-	path += "*"
-	r.Get(path, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+	fs := http.StripPrefix(public, http.FileServer(http.Dir(root)))
+
+	r.Get(public+"*", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		file := strings.Replace(r.RequestURI, public, "", 1)
+		// if the file contains URL params, remove everything after ?
+		if strings.Index(file, "?") > -1 {
+			parts := strings.Split(file, "?")
+			if len(parts) == 2 {
+				file = parts[0] // use everything before the ?
+			}
+		}
+		if _, err := os.Stat(root + file); os.IsNotExist(err) {
+			http.ServeFile(w, r, path.Join(root, "index.html"))
+			return
+		}
 		fs.ServeHTTP(w, r)
 	}))
 }

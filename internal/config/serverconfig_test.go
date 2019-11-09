@@ -42,7 +42,8 @@ const configString = `{
 		"path": "/",
 		"secure": true,
 		"prefix": "prefix"
-	}
+	},
+	"startUrl": "http://url"
 }`
 
 // TestConfigReader reads config settings from json
@@ -80,4 +81,6 @@ func TestConfigReader(t *testing.T) {
 	assert.Equal(t, "/", config.AppCookies.Path)
 	assert.Equal(t, "prefix", config.AppCookies.Prefix)
 	assert.Equal(t, true, config.AppCookies.Secure)
+
+	assert.Equal(t, "http://url", config.StartURL)
 }

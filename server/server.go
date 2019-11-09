@@ -7,16 +7,23 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
+	"github.com/go-chi/chi"
 	_ "github.com/go-sql-driver/mysql" // import the mysql driver
 
 	"github.com/bihe/login-go/internal"
 	"github.com/bihe/login-go/internal/config"
+	"github.com/bihe/login-go/internal/cookies"
+	"github.com/bihe/login-go/internal/persistence"
+	"github.com/bihe/login-go/internal/security"
+	"github.com/bihe/login-go/server/api"
 	"github.com/wangii/emoji"
 
 	per "github.com/bihe/commons-go/persistence"
+	sec "github.com/bihe/commons-go/security"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -41,9 +48,10 @@ type Args struct {
 func Run() (err error) {
 	srv := setupServer()
 	go func() {
-		log.Printf("%s Starting server ...", emoji.EmojiTagToUnicode(`:rocket:`))
-		log.Printf("%s Listening on '%s'", emoji.EmojiTagToUnicode(`:computer:`), srv.Addr)
-		log.Printf("%s Version: '%s-%s'\n", emoji.EmojiTagToUnicode(`:bookmark:`), Version, Build)
+		fmt.Printf("%s Starting server ...\n", emoji.EmojiTagToUnicode(`:rocket:`))
+		fmt.Printf("%s Listening on '%s'\n", emoji.EmojiTagToUnicode(`:computer:`), srv.Addr)
+		fmt.Printf("%s Version: '%s-%s'\n", emoji.EmojiTagToUnicode(`:bookmark:`), Version, Build)
+		fmt.Printf("%s Ready!\n", emoji.EmojiTagToUnicode(`:checkered_flag:`))
 		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
 			return
 		}
@@ -55,21 +63,64 @@ func Run() (err error) {
 // internal logic / helpers
 // --------------------------------------------------------------------------
 
+type server struct {
+	router chi.Router
+}
+
 func setupServer() *http.Server {
 	args := parseFlags()
 	config := configFromFile(args.ConfigFile)
+
+	apiSrv := createServer(args.BasePath, config)
+	setupLog(config)
+	log.SetLevel(log.DebugLevel)
+	addr := fmt.Sprintf("%s:%d", args.HostName, args.Port)
+	srv := &http.Server{Addr: addr, Handler: apiSrv.router}
+	return srv
+}
+
+func createServer(basePath string, config config.AppConfig) *server {
+	base, err := filepath.Abs(basePath)
+	if err != nil {
+		panic(fmt.Sprintf("cannot resolve basepath '%s', %v", basePath, err))
+	}
+
+	// configure JWT authentication and use JWT middleware
+	jwtOpts := security.JwtOptions{
+		JwtSecret:  config.Sec.JwtSecret,
+		JwtIssuer:  config.Sec.JwtIssuer,
+		CookieName: config.Sec.CookieName,
+		RequiredClaim: sec.Claim{
+			Name:  config.Sec.Claim.Name,
+			URL:   config.Sec.Claim.URL,
+			Roles: config.Sec.Claim.Roles,
+		},
+		RedirectURL:   config.Sec.LoginRedirect,
+		CacheDuration: config.Sec.CacheDuration,
+	}
+	cookieSettings := cookies.Settings{
+		Path:   config.AppCookies.Path,
+		Domain: config.AppCookies.Domain,
+		Secure: config.AppCookies.Secure,
+		Prefix: config.AppCookies.Prefix,
+	}
+	con := per.NewConn(config.DB.ConnStr)
+	repo, err := persistence.NewRepository(con)
+	if err != nil {
+		panic(fmt.Sprintf("could not create a repository: %v", err))
+	}
+
 	version := internal.VersionInfo{
 		Version: Version,
 		Build:   Build,
 		Runtime: Runtime,
 	}
-	con := per.NewConn(config.DB.ConnStr)
-	r := NewRouter(args.BasePath, config, version, con)
-	//setupLog(r, c)
-	log.SetLevel(log.DebugLevel)
-	addr := fmt.Sprintf("%s:%d", args.HostName, args.Port)
-	srv := &http.Server{Addr: addr, Handler: r}
-	return srv
+
+	apiSrv := api.New(base, cookieSettings, version, config.OIDC, config.Sec, repo)
+
+	return &server{
+		router: NewRouter(base, apiSrv, cookieSettings, jwtOpts),
+	}
 }
 
 func graceful(s *http.Server, timeout time.Duration) error {

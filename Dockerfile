@@ -20,7 +20,7 @@ ENV COMMIT=${buildtime_varialbe_commit}
 
 WORKDIR /backend-build
 COPY . .
-RUN GOOS=linux GOARCH=amd64 go build -ldflags="-w -s -X main.Version=${VERSION}-${COMMIT} -X main.Build=${BUILD}" -tags prod -o login.api
+RUN GOOS=linux GOARCH=amd64 go build -ldflags="-w -s -X main.Version=${VERSION}-${COMMIT} -X main.Build=${BUILD}" -tags prod -o login.api cmd/server/main.go
 ## --------------------------------------------------------------------------
 
 ## runtime

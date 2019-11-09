@@ -38,6 +38,9 @@ docker-build:
 docker-run:
 	@-$(MAKE) -s __docker-run
 
+frontend:
+	@-$(MAKE) do-frontend-build
+
 go-compile: go-clean go-build
 
 go-compile-release: go-clean go-build-release
@@ -60,15 +63,15 @@ go-test-coverage:
 
 go-build:
 	@echo "  >  Building binary ..."
-	go build -o login.api
+	go build -o login.api ./cmd/server/main.go
 
 go-build-release:
 	@echo "  >  Building binary..."
-	GOOS=linux GOARCH=amd64 go build -ldflags="-w -s -X main.Version=${VERSION}${COMMIT} -X main.Build=${BUILD} -X main.Runtime=${RUNTIME}" -tags prod -o login.api
+	GOOS=linux GOARCH=amd64 go build -ldflags="-w -s -X main.Version=${VERSION}${COMMIT} -X main.Build=${BUILD} -X main.Runtime=${RUNTIME}" -tags prod -o login.api cmd/server/main.go
 
 go-swagger:
 	# go get -u github.com/swaggo/swag/cmd/swag
-	swag init -g server.go
+	swag init -g cmd/server/main.go
 
 go-clean:
 	@echo "  >  Cleaning build cache"
@@ -82,5 +85,9 @@ __docker-build:
 __docker-run:
 	@echo " ... running docker image"
 	docker run -it -p 127.0.0.1:3000:3000 -v "$(PWD)":/opt/login/etc login
+
+do-frontend-build:
+	@echo "  >  Building angular frontend ..."
+	cd ./frontend.angular;	npm install && npm run build -- --prod --base-href /ui/
 
 .PHONY: compile release test run clean coverage

@@ -13,6 +13,7 @@ type AppConfig struct {
 	Log        LogConfig          `json:"logging"`
 	OIDC       OAuthConfig        `json:"oidc"`
 	AppCookies ApplicationCookies `json:"appCookies"`
+	StartURL   string             `json:"startUrl"`
 }
 
 // Security settings for the application
