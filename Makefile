@@ -3,10 +3,10 @@ PROJECTNAME=$(shell basename "$(PWD)")
 # Make is verbose in Linux. Make it silent.
 MAKEFLAGS += --silent
 
-GOVERSION=`go version | sed 's/.*version //' | sed 's/ .*//'`
 VERSION="2.0.0-"
 COMMIT=`git rev-parse HEAD | cut -c 1-8`
 BUILD=`date -u +%Y%m%d.%H%M%S`
+RUNTIME=`go version | sed 's/.*version //' | sed 's/ .*//'`
 
 compile:
 	@-$(MAKE) -s go-compile

@@ -15,6 +15,7 @@ variables:
   DOCKER_BUILDKIT: 1
   TSTAMP: $[format('{0:yyyyMMdd}', pipeline.startTime)]
   imageName: 'bihe/login-go'
+  RUNTIME: 'go1.13'
 
 steps:
 
@@ -83,6 +84,7 @@ steps:
       $(Build.SourceBranchName)
     arguments: |
       --build-arg buildtime_variable_version=$(buildtime_variable_version)
+      --build-arg buildtime_variable_runtime=$(RUNTIME)
       --build-arg buildtime_variable_timestamp=$(TSTAMP)
       --build-arg buildtime_variable_commit=$(buildtime_variable_commit)
 

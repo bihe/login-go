@@ -27,15 +27,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var (
-	// Version exports the application version
-	Version = "2.0.0"
-	// Build provides information about the application build
-	Build = "20190926.211500"
-	// Runtime specifies the golang version used
-	Runtime = "golang"
-)
-
 // Args is uded to configure the API server
 type Args struct {
 	HostName   string
@@ -45,12 +36,13 @@ type Args struct {
 }
 
 // Run configures and starts the Server
-func Run() (err error) {
-	srv := setupServer()
+func Run(version, build, runtime string) (err error) {
+	srv := setupServer(version, build, runtime)
 	go func() {
 		fmt.Printf("%s Starting server ...\n", emoji.EmojiTagToUnicode(`:rocket:`))
 		fmt.Printf("%s Listening on '%s'\n", emoji.EmojiTagToUnicode(`:computer:`), srv.Addr)
-		fmt.Printf("%s Version: '%s-%s'\n", emoji.EmojiTagToUnicode(`:bookmark:`), Version, Build)
+		fmt.Printf("%s Version: '%s-%s'\n", emoji.EmojiTagToUnicode(`:bookmark:`), version, build)
+		fmt.Printf("%s Runtime: '%s'\n", emoji.EmojiTagToUnicode(`:hamster:`), runtime)
 		fmt.Printf("%s Ready!\n", emoji.EmojiTagToUnicode(`:checkered_flag:`))
 		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
 			return
@@ -67,11 +59,17 @@ type server struct {
 	router chi.Router
 }
 
-func setupServer() *http.Server {
+func setupServer(version, build, runtime string) *http.Server {
+	v := internal.VersionInfo{
+		Version: version,
+		Build:   build,
+		Runtime: runtime,
+	}
+
 	args := parseFlags()
 	config := configFromFile(args.ConfigFile)
 
-	apiSrv := createServer(args.BasePath, config)
+	apiSrv := createServer(args.BasePath, config, v)
 	setupLog(config)
 	log.SetLevel(log.DebugLevel)
 	addr := fmt.Sprintf("%s:%d", args.HostName, args.Port)
@@ -79,7 +77,7 @@ func setupServer() *http.Server {
 	return srv
 }
 
-func createServer(basePath string, config config.AppConfig) *server {
+func createServer(basePath string, config config.AppConfig, version internal.VersionInfo) *server {
 	base, err := filepath.Abs(basePath)
 	if err != nil {
 		panic(fmt.Sprintf("cannot resolve basepath '%s', %v", basePath, err))
@@ -108,12 +106,6 @@ func createServer(basePath string, config config.AppConfig) *server {
 	repo, err := persistence.NewRepository(con)
 	if err != nil {
 		panic(fmt.Sprintf("could not create a repository: %v", err))
-	}
-
-	version := internal.VersionInfo{
-		Version: Version,
-		Build:   Build,
-		Runtime: Runtime,
 	}
 
 	apiSrv := api.New(base, cookieSettings, version, config.OIDC, config.Sec, repo)
