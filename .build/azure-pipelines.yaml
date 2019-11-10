@@ -86,4 +86,5 @@ steps:
     tags: |
       latest
       $(buildtime_variable_commit)
+      $(Build.SourceBranchName)
 
