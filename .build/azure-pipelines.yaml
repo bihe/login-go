@@ -80,6 +80,7 @@ steps:
       latest
       $(buildtime_variable_commit)
       $(Build.SourceBranchName)
+      docker.pkg.github.com/bihe/login-go/login-go
     arguments: |
       --build-arg buildtime_variable_version=$(buildtime_variable_version)
       --build-arg buildtime_variable_timestamp=$(TSTAMP)
