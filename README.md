@@ -6,7 +6,7 @@ Simple API which uses [OIDC](https://developers.google.com/identity/protocols/Op
 
 ## Technology
 
-* REST backend: [gin](https://github.com/gin-gonic/gin) (v1.4.x), golang (1.1x)
+* REST backend: [chi](https://github.com/go-chi/chi) (v4.0.x), golang (1.1x)
 * frontend angular (8.x.x)
 * mariadb: 10.x
 
