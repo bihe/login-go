@@ -14,6 +14,8 @@ variables:
   GO111MODULE: 'on'
   DOCKER_BUILDKIT: 1
   TSTAMP: $[format('{0:yyyyMMdd}', pipeline.startTime)]
+  imageName: 'login-go'
+  githubTag: 'docker.pkg.github.com/bihe/login-go/login-go'
 
 steps:
 
@@ -75,12 +77,14 @@ steps:
   inputs:
     command: build
     Dockerfile: '$(modulePath)/Dockerfile'
-    repository: bihe/login-go
+    repository: $(imageName)
     tags: |
       latest
       $(buildtime_variable_commit)
       $(Build.SourceBranchName)
-      docker.pkg.github.com/bihe/login-go/login-go
+      $(githubTag):latest
+      $(githubTag):$(buildtime_variable_commit)
+      $(githubTag):$(Build.SourceBranchName)
     arguments: |
       --build-arg buildtime_variable_version=$(buildtime_variable_version)
       --build-arg buildtime_variable_timestamp=$(TSTAMP)
@@ -91,7 +95,7 @@ steps:
   inputs:
     containerRegistry: dockerhub
     command: push
-    repository: bihe/login-go
+    repository: bihe/$(imageName)
     tags: |
       latest
       $(buildtime_variable_commit)
@@ -102,8 +106,8 @@ steps:
   inputs:
     containerRegistry: github_docker
     command: push
-    repository: docker.pkg.github.com/bihe/login-go/login-go
+    repository: $(githubTag)
     tags: |
-      latest
-      $(buildtime_variable_commit)
-      $(Build.SourceBranchName)
+      $(githubTag):latest
+      $(githubTag):$(buildtime_variable_commit)
+      $(githubTag):$(Build.SourceBranchName)
