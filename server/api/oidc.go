@@ -151,12 +151,20 @@ func (a *handlers) HandleError(w http.ResponseWriter, r *http.Request) error {
 
 const cookieExpiry = 60
 
+// oidcInitiateURL is used as a local hop to ensure that cookies are written to the local domain
+const oidcInitiateURL = "/redirect-oidc"
+
+// GetOIDCRedirectURL returns the URL used for additional round-trip to ensure that cookies are written
+func (a *handlers) GetOIDCRedirectURL() string {
+	return oidcInitiateURL
+}
+
 // HandleOIDCRedirect initiates the OAUTH flow by redirecting the authentication system
 func (a *handlers) HandleOIDCRedirect(w http.ResponseWriter, r *http.Request) error {
 	state := randToken()
 	a.appCookie.Set(stateParam, state, cookieExpiry, w)
-	log.WithField("func", "server.handleOIDCRedirect").Debugf("GetRedirect: initiate using state '%s'", state)
-	http.Redirect(w, r, a.oauthConfig.AuthCodeURL(state), http.StatusFound)
+	log.WithField("func", "server.HandleOIDCRedirect").Debugf("GetRedirect: initiate using state '%s'", state)
+	http.Redirect(w, r, a.GetOIDCRedirectURL(), http.StatusTemporaryRedirect)
 	return nil
 }
 
@@ -164,13 +172,25 @@ func (a *handlers) HandleOIDCRedirect(w http.ResponseWriter, r *http.Request) er
 func (a *handlers) HandleAuthFlow(w http.ResponseWriter, r *http.Request) error {
 	state := randToken()
 	a.appCookie.Set(stateParam, state, cookieExpiry, w)
-	log.WithField("func", "server.handleAuthFlow").Debugf("initiate using state '%s'", state)
+	log.WithField("func", "server.HandleAuthFlow").Debugf("initiate using state '%s'", state)
 
 	site, redirect := query(r, siteParam), query(r, redirectParam)
 	if site == "" || redirect == "" {
 		return errors.BadRequestError{Err: fmt.Errorf("missing or invalid parameters supplied"), Request: r}
 	}
 	a.appCookie.Set(authFlowCookie, fmt.Sprintf("%s%s%s", site, authFlowSep, redirect), cookieExpiry, w)
+	http.Redirect(w, r, a.GetOIDCRedirectURL(), http.StatusTemporaryRedirect)
+	return nil
+}
+
+// HandleOIDCRedirectFinal is responsible to set the state cookie for the OIDC interaction
+func (a *handlers) HandleOIDCRedirectFinal(w http.ResponseWriter, r *http.Request) error {
+	state := a.appCookie.Get(stateParam, r)
+	if state == "" {
+		log.WithField("func", "server.HandleOIDCRedirectFinal").Debugf("emptiy state from cookie, referrer: '%s'", r.Referer())
+		return errors.BadRequestError{Err: fmt.Errorf("missing state, cannot initiate OIDC"), Request: r}
+	}
+	log.WithField("func", "server.HandleOIDCRedirectFinal").Debugf("initiate OIDC redirect using state: '%s'", state)
 	http.Redirect(w, r, a.oauthConfig.AuthCodeURL(state), http.StatusFound)
 	return nil
 }
@@ -184,7 +204,7 @@ func (a *handlers) HandleOIDCLogin(w http.ResponseWriter, r *http.Request) error
 
 	// read the stateParam again
 	state := a.appCookie.Get(stateParam, r)
-	log.WithField("func", "server.handleOIDCLogin").Debugf("got state param: %s", state)
+	log.WithField("func", "server.HandleOIDCLogin").Debugf("got state param: %s", state)
 
 	if query(r, stateParam) != state {
 		return errors.BadRequestError{Err: fmt.Errorf("state did not match"), Request: r}
@@ -198,7 +218,7 @@ func (a *handlers) HandleOIDCLogin(w http.ResponseWriter, r *http.Request) error
 	)
 	authFlowParams := a.appCookie.Get(authFlowCookie, r)
 	if authFlowParams != "" {
-		log.WithField("func", "server.handleOIDCLogin").Debugf("auth/flow login-mode")
+		log.WithField("func", "server.HandleOIDCLogin").Debugf("auth/flow login-mode")
 		parts := strings.Split(authFlowParams, "|")
 		site = parts[0]
 		redirect = parts[1]
@@ -238,17 +258,17 @@ func (a *handlers) HandleOIDCLogin(w http.ResponseWriter, r *http.Request) error
 	success := true
 	sites, err := a.repo.GetSitesByUser(oidcClaims.Email)
 	if err != nil {
-		log.WithField("func", "server.handleOIDCLogin").Warnf("successfull login by '%s' but error fetching sites! %v", oidcClaims.Email, err)
+		log.WithField("func", "server.HandleOIDCLogin").Warnf("successfull login by '%s' but error fetching sites! %v", oidcClaims.Email, err)
 		success = false
 	}
 
 	if sites == nil || len(sites) == 0 {
-		log.WithField("func", "server.handleOIDCLogin").Warnf("successfull login by '%s' but no sites availabel!", oidcClaims.Email)
+		log.WithField("func", "server.HandleOIDCLogin").Warnf("successfull login by '%s' but no sites availabel!", oidcClaims.Email)
 		success = false
 	}
 
 	if authFlow {
-		log.WithField("func", "server.handleOIDCLogin").Debugf("auth/flow - check for specific site '%s'", site)
+		log.WithField("func", "server.HandleOIDCLogin").Debugf("auth/flow - check for specific site '%s'", site)
 		success = false
 		// check specific site
 		for _, e := range sites {
@@ -282,7 +302,7 @@ func (a *handlers) HandleOIDCLogin(w http.ResponseWriter, r *http.Request) error
 	}
 	token, err := sec.CreateToken(a.jwt.JwtIssuer, []byte(a.jwt.JwtSecret), a.jwt.Expiry, claims)
 	if err != nil {
-		log.WithField("func", "server.handleOIDCLogin").Errorf("could not create a JWT token: %v", err)
+		log.WithField("func", "server.HandleOIDCLogin").Errorf("could not create a JWT token: %v", err)
 		return errors.ServerError{Err: fmt.Errorf("error creating JWT: %v", err), Request: r}
 	}
 
@@ -298,7 +318,7 @@ func (a *handlers) HandleOIDCLogin(w http.ResponseWriter, r *http.Request) error
 
 	err = a.repo.StoreLogin(login, per.Atomic{})
 	if err != nil {
-		log.WithField("func", "server.handleOIDCLogin").Errorf("the login could not be saved: %v", err)
+		log.WithField("func", "server.HandleOIDCLogin").Errorf("the login could not be saved: %v", err)
 		return errors.ServerError{Err: fmt.Errorf("error storing the login: %v", err), Request: r}
 	}
 
@@ -308,7 +328,7 @@ func (a *handlers) HandleOIDCLogin(w http.ResponseWriter, r *http.Request) error
 
 	redirectURL := a.jwt.LoginRedirect
 	if authFlow {
-		log.WithField("func", "server.handleOIDCLogin").Debugf("auth/flow - redirect to specific URL: '%s'", redirect)
+		log.WithField("func", "server.HandleOIDCLogin").Debugf("auth/flow - redirect to specific URL: '%s'", redirect)
 		redirectURL = redirect
 	}
 
@@ -319,7 +339,7 @@ func (a *handlers) HandleOIDCLogin(w http.ResponseWriter, r *http.Request) error
 
 // HandleLogout invalidates the authenticated user
 func (a *handlers) HandleLogout(user sec.User, w http.ResponseWriter, r *http.Request) error {
-	log.WithField("func", "server.handleLogout").Debugf("for user '%s'", user.Username)
+	log.WithField("func", "server.HandleLogout").Debugf("for user '%s'", user.Username)
 	// remove the cookie by expiring it
 	a.setJWTCookie(a.jwt.CookieName, "", -1, w)
 	a.appCookie.Set(config.FlashKeyInfo, fmt.Sprintf("User '%s' was logged-off!", user.Email), cookieExpiry, w)

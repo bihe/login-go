@@ -36,9 +36,10 @@ func NewRouter(basePath string, a api.API, cookieSettings cookies.Settings, jwtO
 	serveStaticDir(r, "/assets", http.Dir(filepath.Join(basePath, "./assets")))
 
 	r.Get("/error", a.Call(a.HandleError))
-	r.Get("/oidc", a.Call(a.HandleOIDCRedirect))
-	r.Get("/signin-oidc", a.Call(a.HandleOIDCLogin))
+	r.Get("/start-oidc", a.Call(a.HandleOIDCRedirect))
 	r.Get("/auth/flow", a.Call(a.HandleAuthFlow))
+	r.Get(a.GetOIDCRedirectURL(), a.Call(a.HandleOIDCRedirectFinal))
+	r.Get("/signin-oidc", a.Call(a.HandleOIDCLogin))
 
 	// this group "indicates" that all routes within this group use the JWT authentication
 	r.Group(func(r chi.Router) {

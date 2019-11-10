@@ -57,6 +57,7 @@ type API interface {
 	HandleError(w http.ResponseWriter, r *http.Request) error
 	HandleOIDCRedirect(w http.ResponseWriter, r *http.Request) error
 	HandleAuthFlow(w http.ResponseWriter, r *http.Request) error
+	HandleOIDCRedirectFinal(w http.ResponseWriter, r *http.Request) error
 	HandleOIDCLogin(w http.ResponseWriter, r *http.Request) error
 	HandleLogout(user sec.User, w http.ResponseWriter, r *http.Request) error
 
@@ -67,9 +68,12 @@ type API interface {
 	HandleGetSites(user sec.User, w http.ResponseWriter, r *http.Request) error
 	HandleSaveSites(user sec.User, w http.ResponseWriter, r *http.Request) error
 
-	// wrapper methos
+	// wrapper methods
 	Secure(f func(user sec.User, w http.ResponseWriter, r *http.Request) error) http.HandlerFunc
 	Call(f func(w http.ResponseWriter, r *http.Request) error) http.HandlerFunc
+
+	// configuration
+	GetOIDCRedirectURL() string
 }
 
 var _ API = (*handlers)(nil)

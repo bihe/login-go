@@ -116,11 +116,32 @@ func TestErrorPage(t *testing.T) {
 }
 
 func TestOIDCRedirect(t *testing.T) {
+	handlerURL := "/start-oidc"
 	r, api := newAPIRouter()
-	r.Get("/oidc", api.Call(api.HandleOIDCRedirect))
+	r.Get(handlerURL, api.Call(api.HandleOIDCRedirect))
 
 	rec := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/oidc", nil)
+	req, _ := http.NewRequest("GET", handlerURL, nil)
+
+	r.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusTemporaryRedirect, rec.Code)
+
+	l := rec.Header().Get("Location")
+	u, err := url.Parse(l)
+	if err != nil {
+		t.Errorf("could not parse url: %v", err)
+	}
+	assert.Equal(t, api.GetOIDCRedirectURL(), u.String())
+}
+
+func TestOIDCRedirectFinal(t *testing.T) {
+	handlerURL := "/redirect-oidc"
+	r, api := newAPIRouter()
+	r.Get(handlerURL, api.Call(api.HandleOIDCRedirectFinal))
+
+	rec := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", handlerURL, nil)
+	req.AddCookie(&http.Cookie{Name: stateCookieName, Value: state})
 
 	r.ServeHTTP(rec, req)
 	assert.Equal(t, http.StatusFound, rec.Code)
@@ -135,6 +156,19 @@ func TestOIDCRedirect(t *testing.T) {
 	assert.Equal(t, "CLIENTID", u.Query().Get("client_id"))
 	assert.Equal(t, "http://localhost", u.Query().Get("redirect_uri"))
 	assert.Equal(t, "openid profile email", u.Query().Get("scope"))
+}
+
+func TestOIDCRedirectFinalFail(t *testing.T) {
+	handlerURL := "/redirect-oidc"
+	r, api := newAPIRouter()
+	r.Get(handlerURL, api.Call(api.HandleOIDCRedirectFinal))
+
+	rec := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", handlerURL, nil)
+	// Missing Cookie - therefor 400
+
+	r.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
 }
 
 func TestOIDCSignin(t *testing.T) {
@@ -255,6 +289,7 @@ func TestOIDCSigninFailClaims(t *testing.T) {
 }
 
 func TestOIDCAuthFlow(t *testing.T) {
+	handlerURL := "/redirect-oidc"
 	r, api := newAPIRouter()
 	authFlowURL := "/auth/flow"
 	r.Get(authFlowURL, api.Call(api.HandleAuthFlow))
@@ -265,18 +300,21 @@ func TestOIDCAuthFlow(t *testing.T) {
 	req, _ := http.NewRequest("GET", authFlowURL, nil)
 
 	r.ServeHTTP(rec, req)
-	assert.Equal(t, http.StatusFound, rec.Code)
+	assert.Equal(t, http.StatusTemporaryRedirect, rec.Code)
 
 	l := rec.Header().Get("Location")
 	u, err := url.Parse(l)
 	if err != nil {
 		t.Errorf("could not parse url: %v", err)
 	}
-
-	assert.Equal(t, "accounts.google.com", u.Hostname())
-	assert.Equal(t, "CLIENTID", u.Query().Get("client_id"))
-	assert.Equal(t, "http://localhost", u.Query().Get("redirect_uri"))
-	assert.Equal(t, "openid profile email", u.Query().Get("scope"))
+	assert.Equal(t, handlerURL, u.String())
+	for _, cookie := range rec.Result().Cookies() {
+		if cookie.Name == stateParam {
+			assert.NotEmpty(t, cookie.Value)
+		} else if cookie.Name == authFlowCookie {
+			assert.Equal(t, fmt.Sprintf("%s|%s", "site", redirectURL), cookie.Value)
+		}
+	}
 }
 
 func TestOIDCAuthFlowFail(t *testing.T) {
