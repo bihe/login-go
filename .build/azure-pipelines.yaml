@@ -101,7 +101,7 @@ steps:
   inputs:
     containerRegistry: github_docker
     command: push
-    repository: bihe/login-go
+    repository: docker.pkg.github.com/bihe/login-go/login-go
     tags: |
       latest
       $(buildtime_variable_commit)
