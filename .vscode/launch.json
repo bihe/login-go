@@ -10,7 +10,22 @@
             "request": "launch",
             "mode": "auto",
             "program": "${fileDirname}",
+            "args": [],
+            "internalConsoleOptions": "openOnSessionStart",
+            "showLog": true,
+            "output": "debug"
+        },
+        {
+            "name": "Run :: go-chi",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/cmd/server/main.go",
             "args": [
+                "-c",
+                "../../application.json",
+                "-b",
+                "../.."
             ],
             "internalConsoleOptions": "openOnSessionStart",
             "showLog": true,

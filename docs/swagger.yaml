@@ -1,5 +1,5 @@
 definitions:
-  appinfo.Meta:
+  api.Meta:
     properties:
       displayName:
         type: string
@@ -14,7 +14,29 @@ definitions:
       version:
         type: string
     type: object
-  core.ProblemDetail:
+  api.SiteInfo:
+    properties:
+      name:
+        type: string
+      permissions:
+        items:
+          type: string
+        type: array
+      url:
+        type: string
+    type: object
+  api.UserSites:
+    properties:
+      editable:
+        type: boolean
+      user:
+        type: string
+      userSites:
+        items:
+          $ref: '#/definitions/api.SiteInfo'
+        type: array
+    type: object
+  errors.ProblemDetail:
     properties:
       detail:
         description: Detail is a human-readable explanation specific to this occurrence
@@ -37,28 +59,6 @@ definitions:
           dereferenced, it provide human-readable documentation for the problem
         type: string
     type: object
-  sites.SiteInfo:
-    properties:
-      name:
-        type: string
-      permissions:
-        items:
-          type: string
-        type: array
-      url:
-        type: string
-    type: object
-  sites.UserInfo:
-    properties:
-      editable:
-        type: boolean
-      user:
-        type: string
-      userSites:
-        items:
-          $ref: '#/definitions/sites.SiteInfo'
-        type: array
-    type: object
 info:
   contact: {}
   description: The central login for all my applications
@@ -77,15 +77,15 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/appinfo.Meta'
+            $ref: '#/definitions/api.Meta'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/core.ProblemDetail'
+            $ref: '#/definitions/errors.ProblemDetail'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/core.ProblemDetail'
+            $ref: '#/definitions/errors.ProblemDetail'
       summary: provides information about the application
       tags:
       - appinfo
@@ -98,19 +98,19 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/sites.UserInfo'
+            $ref: '#/definitions/api.UserSites'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/core.ProblemDetail'
+            $ref: '#/definitions/errors.ProblemDetail'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/core.ProblemDetail'
+            $ref: '#/definitions/errors.ProblemDetail'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/core.ProblemDetail'
+            $ref: '#/definitions/errors.ProblemDetail'
       summary: sites of current user
       tags:
       - sites
@@ -119,26 +119,23 @@ paths:
       produces:
       - application/json
       responses:
-        "201":
-          description: Created
-          schema:
-            type: string
+        "201": {}
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/core.ProblemDetail'
+            $ref: '#/definitions/errors.ProblemDetail'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/core.ProblemDetail'
+            $ref: '#/definitions/errors.ProblemDetail'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/core.ProblemDetail'
+            $ref: '#/definitions/errors.ProblemDetail'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/core.ProblemDetail'
+            $ref: '#/definitions/errors.ProblemDetail'
       summary: stores the given sites
       tags:
       - sites

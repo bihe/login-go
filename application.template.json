@@ -34,5 +34,6 @@
 		"path": "/",
 		"secure": true,
 		"prefix": "prefix"
-	}
+  },
+  "startUrl": "/STARTURL"
 }
