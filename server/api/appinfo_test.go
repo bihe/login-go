@@ -7,11 +7,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	sec "github.com/bihe/commons-go/security"
-	"github.com/bihe/login-go/internal/config"
-	"github.com/bihe/login-go/internal/errors"
+	"github.com/bihe/commons-go/errors"
 	"github.com/go-chi/chi"
 	"github.com/stretchr/testify/assert"
+
+	c "github.com/bihe/commons-go/config"
+	"github.com/bihe/commons-go/security"
 )
 
 func TestGetAppInfo(t *testing.T) {
@@ -20,7 +21,7 @@ func TestGetAppInfo(t *testing.T) {
 
 	r.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := context.WithValue(r.Context(), config.User, &sec.User{
+			ctx := context.WithValue(r.Context(), c.User, &security.User{
 				Username:    "username",
 				Email:       "a.b@c.de",
 				DisplayName: "displayname",
@@ -53,7 +54,7 @@ func TestGetAppInfoNilUser(t *testing.T) {
 	api := New("templatepath", cookieSettings, version, oauthConfig, jwtConfig, &mockRepository{})
 	r.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := context.WithValue(r.Context(), config.User, nil)
+			ctx := context.WithValue(r.Context(), c.User, nil)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	})

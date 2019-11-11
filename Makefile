@@ -8,8 +8,14 @@ COMMIT=`git rev-parse HEAD | cut -c 1-8`
 BUILD=`date -u +%Y%m%d.%H%M%S`
 RUNTIME=`go version | sed 's/.*version //' | sed 's/ .*//'`
 
-compile:
+compile: ## compile the application
 	@-$(MAKE) -s go-compile
+
+clean: ## clean
+	@-$(MAKE) go-clean
+
+update:
+	@-$(MAKE) go-update
 
 release:
 	@-$(MAKE) -s go-compile-release
@@ -28,9 +34,6 @@ swagger:
 
 run:
 	@-$(MAKE) -s go-compile go-run
-
-clean:
-	@-$(MAKE) go-clean
 
 docker-build:
 	@-$(MAKE) -s __docker-build
@@ -52,6 +55,10 @@ go-run:
 go-test:
 	@echo "  >  Go test ..."
 	go test -race ./...
+
+go-update:
+	@echo "  >  Go update dependencies ..."
+	go get -u ./...
 
 go-clean-test:
 	@echo "  >  Go test (no cache)..."
@@ -91,3 +98,4 @@ do-frontend-build:
 	cd ./frontend.angular;	npm install && npm run build -- --prod --base-href /ui/
 
 .PHONY: compile release test run clean coverage
+

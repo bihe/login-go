@@ -1,13 +1,13 @@
 package api
 
 import (
-	per "github.com/bihe/commons-go/persistence"
-	sec "github.com/bihe/commons-go/security"
+	"github.com/bihe/commons-go/cookies"
+	"github.com/bihe/commons-go/security"
 	"github.com/bihe/login-go/internal"
 	"github.com/bihe/login-go/internal/config"
-	"github.com/bihe/login-go/internal/cookies"
 	"github.com/bihe/login-go/internal/persistence"
-	"github.com/bihe/login-go/internal/security"
+
+	per "github.com/bihe/commons-go/persistence"
 )
 
 // package wide test-data
@@ -60,7 +60,7 @@ var jwtOpts = security.JwtOptions{
 	JwtSecret:  jwtConfig.JwtSecret,
 	JwtIssuer:  jwtConfig.JwtIssuer,
 	CookieName: jwtConfig.CookieName,
-	RequiredClaim: sec.Claim{
+	RequiredClaim: security.Claim{
 		Name:  "claim",
 		URL:   "http://localhost:3000",
 		Roles: []string{"role"},

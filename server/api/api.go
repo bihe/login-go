@@ -5,14 +5,16 @@ import (
 	"fmt"
 	"net/http"
 
-	sec "github.com/bihe/commons-go/security"
+	"github.com/bihe/commons-go/cookies"
+	"github.com/bihe/commons-go/errors"
+	"github.com/bihe/commons-go/security"
 	"github.com/bihe/login-go/internal"
 	"github.com/bihe/login-go/internal/config"
-	"github.com/bihe/login-go/internal/cookies"
-	"github.com/bihe/login-go/internal/errors"
 	"github.com/bihe/login-go/internal/persistence"
-	log "github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
+
+	c "github.com/bihe/commons-go/config"
+	log "github.com/sirupsen/logrus"
 )
 
 // --------------------------------------------------------------------------
@@ -59,17 +61,17 @@ type API interface {
 	HandleAuthFlow(w http.ResponseWriter, r *http.Request) error
 	HandleOIDCRedirectFinal(w http.ResponseWriter, r *http.Request) error
 	HandleOIDCLogin(w http.ResponseWriter, r *http.Request) error
-	HandleLogout(user sec.User, w http.ResponseWriter, r *http.Request) error
+	HandleLogout(user security.User, w http.ResponseWriter, r *http.Request) error
 
 	// appinfo
-	HandleAppInfo(user sec.User, w http.ResponseWriter, r *http.Request) error
+	HandleAppInfo(user security.User, w http.ResponseWriter, r *http.Request) error
 
 	// sites
-	HandleGetSites(user sec.User, w http.ResponseWriter, r *http.Request) error
-	HandleSaveSites(user sec.User, w http.ResponseWriter, r *http.Request) error
+	HandleGetSites(user security.User, w http.ResponseWriter, r *http.Request) error
+	HandleSaveSites(user security.User, w http.ResponseWriter, r *http.Request) error
 
 	// wrapper methods
-	Secure(f func(user sec.User, w http.ResponseWriter, r *http.Request) error) http.HandlerFunc
+	Secure(f func(user security.User, w http.ResponseWriter, r *http.Request) error) http.HandlerFunc
 	Call(f func(w http.ResponseWriter, r *http.Request) error) http.HandlerFunc
 
 	// configuration
@@ -119,15 +121,15 @@ func New(basePath string, cs cookies.Settings, version internal.VersionInfo, oau
 
 // Secure wraps handlers to have a common signature
 // a User is retrieved from the context and a possible error from the handler function is processed
-func (a *handlers) Secure(f func(user sec.User, w http.ResponseWriter, r *http.Request) error) http.HandlerFunc {
+func (a *handlers) Secure(f func(user security.User, w http.ResponseWriter, r *http.Request) error) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		u := r.Context().Value(config.User)
+		u := r.Context().Value(c.User)
 		if u == nil {
 			log.WithField("func", "server.secure").Errorf("user is not available in context!")
 			a.errRep.Negotiate(w, r, fmt.Errorf("user is not available in context"))
 			return
 		}
-		user := r.Context().Value(config.User).(*sec.User)
+		user := r.Context().Value(c.User).(*security.User)
 		if err := f(*user, w, r); err != nil {
 			log.WithField("func", "server.secure").Errorf("error during API call %v\n", err)
 			a.errRep.Negotiate(w, r, err)
@@ -178,7 +180,7 @@ func (a *handlers) decode(w http.ResponseWriter, r *http.Request, v interface{})
 }
 
 // hasRole checks if the given user has the given role
-func (a *handlers) hasRole(user sec.User, role string) bool {
+func (a *handlers) hasRole(user security.User, role string) bool {
 	for _, p := range user.Roles {
 		if p == role {
 			return true

@@ -8,11 +8,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	sec "github.com/bihe/commons-go/security"
-	"github.com/bihe/login-go/internal/config"
-	"github.com/bihe/login-go/internal/errors"
+	"github.com/bihe/commons-go/errors"
+	"github.com/bihe/commons-go/security"
 	"github.com/go-chi/chi"
 	"github.com/stretchr/testify/assert"
+
+	c "github.com/bihe/commons-go/config"
 )
 
 func TestGetSites(t *testing.T) {
@@ -25,7 +26,7 @@ func TestGetSites(t *testing.T) {
 
 	r.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := context.WithValue(r.Context(), config.User, &sec.User{
+			ctx := context.WithValue(r.Context(), c.User, &security.User{
 				Username:    "username",
 				Email:       "a.b@c.de",
 				DisplayName: "displayname",
@@ -64,7 +65,7 @@ func TestFailSites(t *testing.T) {
 
 	r.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := context.WithValue(r.Context(), config.User, &sec.User{
+			ctx := context.WithValue(r.Context(), c.User, &security.User{
 				Username:    "username",
 				Email:       "a.b@c.de",
 				DisplayName: "displayname",
@@ -99,7 +100,7 @@ func TestSaveSites(t *testing.T) {
 
 	r.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := context.WithValue(r.Context(), config.User, &sec.User{
+			ctx := context.WithValue(r.Context(), c.User, &security.User{
 				Username:    "username",
 				Email:       "a.b@c.de",
 				DisplayName: "displayname",
@@ -136,7 +137,7 @@ func TestSaveSitesFail(t *testing.T) {
 
 	r.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := context.WithValue(r.Context(), config.User, &sec.User{
+			ctx := context.WithValue(r.Context(), c.User, &security.User{
 				Username:    "username",
 				Email:       "a.b@c.de",
 				DisplayName: "displayname",
@@ -178,7 +179,7 @@ func TestSaveSitesNoPayload(t *testing.T) {
 
 	r.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := context.WithValue(r.Context(), config.User, &sec.User{
+			ctx := context.WithValue(r.Context(), c.User, &security.User{
 				Username:    "username",
 				Email:       "a.b@c.de",
 				DisplayName: "displayname",
@@ -213,7 +214,7 @@ func TestSaveSitesNotAllowed(t *testing.T) {
 
 	r.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := context.WithValue(r.Context(), config.User, &sec.User{
+			ctx := context.WithValue(r.Context(), c.User, &security.User{
 				Username:    "username",
 				Email:       "a.b@c.de",
 				DisplayName: "displayname",

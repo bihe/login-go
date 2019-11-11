@@ -6,10 +6,11 @@ import (
 	"strings"
 	"time"
 
-	per "github.com/bihe/commons-go/persistence"
-	sec "github.com/bihe/commons-go/security"
-	"github.com/bihe/login-go/internal/errors"
+	"github.com/bihe/commons-go/errors"
+	"github.com/bihe/commons-go/security"
 	"github.com/bihe/login-go/internal/persistence"
+
+	per "github.com/bihe/commons-go/persistence"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -23,7 +24,7 @@ import (
 // @Failure 403 {object} errors.ProblemDetail
 // @Failure 404 {object} errors.ProblemDetail
 // @Router /api/v1/sites [get]
-func (a *handlers) HandleGetSites(user sec.User, w http.ResponseWriter, r *http.Request) error {
+func (a *handlers) HandleGetSites(user security.User, w http.ResponseWriter, r *http.Request) error {
 	sites, err := a.repo.GetSitesByUser(user.Email)
 	if err != nil {
 		log.Warnf("cannot get sites of current user '%s', %v", user.Email, err)
@@ -57,7 +58,7 @@ func (a *handlers) HandleGetSites(user sec.User, w http.ResponseWriter, r *http.
 // @Failure 403 {object} errors.ProblemDetail
 // @Failure 500 {object} errors.ProblemDetail
 // @Router /api/v1/sites [post]
-func (a *handlers) HandleSaveSites(user sec.User, w http.ResponseWriter, r *http.Request) error {
+func (a *handlers) HandleSaveSites(user security.User, w http.ResponseWriter, r *http.Request) error {
 	if !a.hasRole(user, a.editRole) {
 		log.Warnf("user '%s' tried to save but does not have required permissions", user.Email)
 		return errors.SecurityError{Err: fmt.Errorf("user '%s' is not allowed to perform this action", user.Email), Request: r}

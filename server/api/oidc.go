@@ -10,17 +10,18 @@ import (
 	"sync"
 	"time"
 
+	"github.com/bihe/commons-go/cookies"
+	"github.com/bihe/commons-go/errors"
+	"github.com/bihe/commons-go/security"
 	"github.com/bihe/login-go/internal/config"
-	"github.com/bihe/login-go/internal/cookies"
-	"github.com/bihe/login-go/internal/errors"
 	"github.com/bihe/login-go/internal/persistence"
 	"github.com/google/uuid"
 	"golang.org/x/oauth2"
 
 	"github.com/coreos/go-oidc"
 
+	c "github.com/bihe/commons-go/config"
 	per "github.com/bihe/commons-go/persistence"
-	sec "github.com/bihe/commons-go/security"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -122,18 +123,18 @@ func (a *handlers) HandleError(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	// read (flash)
-	err = cookie.Get(config.FlashKeyError, r)
+	err = cookie.Get(c.FlashKeyError, r)
 	if err != "" {
 		isError = true
 	}
-	msg = cookie.Get(config.FlashKeyInfo, r)
+	msg = cookie.Get(c.FlashKeyInfo, r)
 	if msg != "" {
 		isMessage = true
 	}
 
 	// clear (flash)
-	cookie.Del(config.FlashKeyError, w)
-	cookie.Del(config.FlashKeyInfo, w)
+	cookie.Del(c.FlashKeyError, w)
+	cookie.Del(c.FlashKeyInfo, w)
 
 	data := map[string]interface{}{
 		"year":      time.Now().Year(),
@@ -280,7 +281,7 @@ func (a *handlers) HandleOIDCLogin(w http.ResponseWriter, r *http.Request) error
 	}
 
 	if !success {
-		a.appCookie.Set(config.FlashKeyError, fmt.Sprintf("User '%s' is not allowed to login!", oidcClaims.Email), cookieExpiry, w)
+		a.appCookie.Set(c.FlashKeyError, fmt.Sprintf("User '%s' is not allowed to login!", oidcClaims.Email), cookieExpiry, w)
 		http.Redirect(w, r, "/error", http.StatusTemporaryRedirect)
 		return nil
 	}
@@ -290,7 +291,7 @@ func (a *handlers) HandleOIDCLogin(w http.ResponseWriter, r *http.Request) error
 	for _, s := range sites {
 		siteClaims = append(siteClaims, fmt.Sprintf("%s|%s|%s", s.Name, s.URL, s.PermList))
 	}
-	claims := sec.Claims{
+	claims := security.Claims{
 		Type:        "login.User",
 		DisplayName: oidcClaims.DisplayName,
 		Email:       oidcClaims.Email,
@@ -300,7 +301,7 @@ func (a *handlers) HandleOIDCLogin(w http.ResponseWriter, r *http.Request) error
 		Surname:     oidcClaims.FamilyName,
 		Claims:      siteClaims,
 	}
-	token, err := sec.CreateToken(a.jwt.JwtIssuer, []byte(a.jwt.JwtSecret), a.jwt.Expiry, claims)
+	token, err := security.CreateToken(a.jwt.JwtIssuer, []byte(a.jwt.JwtSecret), a.jwt.Expiry, claims)
 	if err != nil {
 		log.WithField("func", "server.HandleOIDCLogin").Errorf("could not create a JWT token: %v", err)
 		return errors.ServerError{Err: fmt.Errorf("error creating JWT: %v", err), Request: r}
@@ -338,12 +339,12 @@ func (a *handlers) HandleOIDCLogin(w http.ResponseWriter, r *http.Request) error
 }
 
 // HandleLogout invalidates the authenticated user
-func (a *handlers) HandleLogout(user sec.User, w http.ResponseWriter, r *http.Request) error {
+func (a *handlers) HandleLogout(user security.User, w http.ResponseWriter, r *http.Request) error {
 	log.WithField("func", "server.HandleLogout").Debugf("for user '%s'", user.Username)
 	// remove the cookie by expiring it
 	a.setJWTCookie(a.jwt.CookieName, "", -1, w)
-	a.appCookie.Set(config.FlashKeyInfo, fmt.Sprintf("User '%s' was logged-off!", user.Email), cookieExpiry, w)
-	http.Redirect(w, r, a.jwt.LoginRedirect+config.ErrorPath, http.StatusTemporaryRedirect)
+	a.appCookie.Set(c.FlashKeyInfo, fmt.Sprintf("User '%s' was logged-off!", user.Email), cookieExpiry, w)
+	http.Redirect(w, r, a.jwt.LoginRedirect+c.ErrorPath, http.StatusTemporaryRedirect)
 	return nil
 }
 

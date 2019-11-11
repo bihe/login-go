@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bihe/login-go/internal/cookies"
-	"github.com/bihe/login-go/internal/security"
+	"github.com/bihe/commons-go/cookies"
+	"github.com/bihe/commons-go/security"
 	"github.com/bihe/login-go/server/api"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"

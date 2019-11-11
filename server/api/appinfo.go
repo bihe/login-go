@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	sec "github.com/bihe/commons-go/security"
+	"github.com/bihe/commons-go/security"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -17,7 +17,7 @@ import (
 // @Failure 401 {object} errors.ProblemDetail
 // @Failure 403 {object} errors.ProblemDetail
 // @Router /api/v1/appinfo [get]
-func (a *handlers) HandleAppInfo(user sec.User, w http.ResponseWriter, r *http.Request) error {
+func (a *handlers) HandleAppInfo(user security.User, w http.ResponseWriter, r *http.Request) error {
 	log.WithField("func", "server.HandleAppInfo").Debugf("return the application metadata info")
 	info := Meta{
 		Runtime: a.Runtime,

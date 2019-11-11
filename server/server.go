@@ -14,16 +14,16 @@ import (
 	"github.com/go-chi/chi"
 	_ "github.com/go-sql-driver/mysql" // import the mysql driver
 
+	"github.com/bihe/commons-go/cookies"
+	"github.com/bihe/commons-go/security"
 	"github.com/bihe/login-go/internal"
 	"github.com/bihe/login-go/internal/config"
-	"github.com/bihe/login-go/internal/cookies"
 	"github.com/bihe/login-go/internal/persistence"
-	"github.com/bihe/login-go/internal/security"
+
 	"github.com/bihe/login-go/server/api"
 	"github.com/wangii/emoji"
 
 	per "github.com/bihe/commons-go/persistence"
-	sec "github.com/bihe/commons-go/security"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -88,7 +88,7 @@ func createServer(basePath string, config config.AppConfig, version internal.Ver
 		JwtSecret:  config.Sec.JwtSecret,
 		JwtIssuer:  config.Sec.JwtIssuer,
 		CookieName: config.Sec.CookieName,
-		RequiredClaim: sec.Claim{
+		RequiredClaim: security.Claim{
 			Name:  config.Sec.Claim.Name,
 			URL:   config.Sec.Claim.URL,
 			Roles: config.Sec.Claim.Roles,

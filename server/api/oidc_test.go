@@ -9,7 +9,7 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/bihe/login-go/internal/security"
+	"github.com/bihe/commons-go/security"
 	"github.com/go-chi/chi"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/oauth2"
