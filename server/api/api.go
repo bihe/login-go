@@ -1,3 +1,4 @@
+// Package api implements the HTTP API of the login-application
 package api
 
 import (
@@ -53,8 +54,8 @@ type UserInfo struct {
 // API Interface
 // --------------------------------------------------------------------------
 
-// API defines handlers
-type API interface {
+// Login defines the HTTP handlers responding to requests
+type Login interface {
 	// oidc
 	HandleError(w http.ResponseWriter, r *http.Request) error
 	HandleOIDCRedirect(w http.ResponseWriter, r *http.Request) error
@@ -78,10 +79,10 @@ type API interface {
 	GetOIDCRedirectURL() string
 }
 
-var _ API = (*handlers)(nil)
+var _ Login = (*loginAPI)(nil)
 
-// handlers uses handlers to respond to HTTP requests
-type handlers struct {
+// loginAPI implements the handlers of the API definition
+type loginAPI struct {
 	internal.VersionInfo
 	errRep         *errors.ErrorReporter
 	cookieSettings cookies.Settings
@@ -101,9 +102,9 @@ type handlers struct {
 }
 
 // New creates a new instance of the API type
-func New(basePath string, cs cookies.Settings, version internal.VersionInfo, oauth config.OAuthConfig, jwt config.Security, repo persistence.Repository) API {
+func New(basePath string, cs cookies.Settings, version internal.VersionInfo, oauth config.OAuthConfig, jwt config.Security, repo persistence.Repository) Login {
 	c, v := NewOIDC(oauth)
-	api := handlers{
+	api := loginAPI{
 		VersionInfo:    version,
 		cookieSettings: cs,
 		errRep:         errors.NewReporter(cs),
@@ -121,7 +122,7 @@ func New(basePath string, cs cookies.Settings, version internal.VersionInfo, oau
 
 // Secure wraps handlers to have a common signature
 // a User is retrieved from the context and a possible error from the handler function is processed
-func (a *handlers) Secure(f func(user security.User, w http.ResponseWriter, r *http.Request) error) http.HandlerFunc {
+func (a *loginAPI) Secure(f func(user security.User, w http.ResponseWriter, r *http.Request) error) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		u := r.Context().Value(c.User)
 		if u == nil {
@@ -139,7 +140,7 @@ func (a *handlers) Secure(f func(user security.User, w http.ResponseWriter, r *h
 }
 
 // Call wraps handlers to have a common signature
-func (a *handlers) Call(f func(w http.ResponseWriter, r *http.Request) error) http.HandlerFunc {
+func (a *loginAPI) Call(f func(w http.ResponseWriter, r *http.Request) error) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if err := f(w, r); err != nil {
 			log.WithField("func", "server.call").Errorf("error during API call %v\n", err)
@@ -155,7 +156,7 @@ func (a *handlers) Call(f func(w http.ResponseWriter, r *http.Request) error) ht
 
 // respond converts data into appropriate responses for the client
 // this can be JSON, Plaintext, ...
-func (a *handlers) respond(w http.ResponseWriter, r *http.Request, code int, data interface{}) {
+func (a *loginAPI) respond(w http.ResponseWriter, r *http.Request, code int, data interface{}) {
 	w.Header().Set("Content-Type", "application/problem+json; charset=utf-8")
 	w.WriteHeader(code)
 	if data != nil {
@@ -172,7 +173,7 @@ func (a *handlers) respond(w http.ResponseWriter, r *http.Request, code int, dat
 }
 
 // decode parses supplied JSON payload
-func (a *handlers) decode(w http.ResponseWriter, r *http.Request, v interface{}) error {
+func (a *loginAPI) decode(w http.ResponseWriter, r *http.Request, v interface{}) error {
 	if r.Body == nil {
 		return fmt.Errorf("no body payload available")
 	}
@@ -180,7 +181,7 @@ func (a *handlers) decode(w http.ResponseWriter, r *http.Request, v interface{})
 }
 
 // hasRole checks if the given user has the given role
-func (a *handlers) hasRole(user security.User, role string) bool {
+func (a *loginAPI) hasRole(user security.User, role string) bool {
 	for _, p := range user.Roles {
 		if p == role {
 			return true

@@ -24,7 +24,7 @@ import (
 // @Failure 403 {object} errors.ProblemDetail
 // @Failure 404 {object} errors.ProblemDetail
 // @Router /api/v1/sites [get]
-func (a *handlers) HandleGetSites(user security.User, w http.ResponseWriter, r *http.Request) error {
+func (a *loginAPI) HandleGetSites(user security.User, w http.ResponseWriter, r *http.Request) error {
 	sites, err := a.repo.GetSitesByUser(user.Email)
 	if err != nil {
 		log.Warnf("cannot get sites of current user '%s', %v", user.Email, err)
@@ -58,7 +58,7 @@ func (a *handlers) HandleGetSites(user security.User, w http.ResponseWriter, r *
 // @Failure 403 {object} errors.ProblemDetail
 // @Failure 500 {object} errors.ProblemDetail
 // @Router /api/v1/sites [post]
-func (a *handlers) HandleSaveSites(user security.User, w http.ResponseWriter, r *http.Request) error {
+func (a *loginAPI) HandleSaveSites(user security.User, w http.ResponseWriter, r *http.Request) error {
 	if !a.hasRole(user, a.editRole) {
 		log.Warnf("user '%s' tried to save but does not have required permissions", user.Email)
 		return errors.SecurityError{Err: fmt.Errorf("user '%s' is not allowed to perform this action", user.Email), Request: r}

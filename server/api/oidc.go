@@ -102,7 +102,7 @@ const templateDir = "templates"
 const errorTemplate = "error.tmpl"
 
 // HandleError returns a HTML template showing errors
-func (a *handlers) HandleError(w http.ResponseWriter, r *http.Request) error {
+func (a *loginAPI) HandleError(w http.ResponseWriter, r *http.Request) error {
 	cookie := cookies.NewAppCookie(a.cookieSettings)
 	var (
 		msg       string
@@ -156,12 +156,12 @@ const cookieExpiry = 60
 const oidcInitiateURL = "/redirect-oidc"
 
 // GetOIDCRedirectURL returns the URL used for additional round-trip to ensure that cookies are written
-func (a *handlers) GetOIDCRedirectURL() string {
+func (a *loginAPI) GetOIDCRedirectURL() string {
 	return oidcInitiateURL
 }
 
 // HandleOIDCRedirect initiates the OAUTH flow by redirecting the authentication system
-func (a *handlers) HandleOIDCRedirect(w http.ResponseWriter, r *http.Request) error {
+func (a *loginAPI) HandleOIDCRedirect(w http.ResponseWriter, r *http.Request) error {
 	state := randToken()
 	a.appCookie.Set(stateParam, state, cookieExpiry, w)
 	log.WithField("func", "server.HandleOIDCRedirect").Debugf("GetRedirect: initiate using state '%s'", state)
@@ -170,7 +170,7 @@ func (a *handlers) HandleOIDCRedirect(w http.ResponseWriter, r *http.Request) er
 }
 
 // HandleAuthFlow initiates the authentication and redirects to a specific URL
-func (a *handlers) HandleAuthFlow(w http.ResponseWriter, r *http.Request) error {
+func (a *loginAPI) HandleAuthFlow(w http.ResponseWriter, r *http.Request) error {
 	state := randToken()
 	a.appCookie.Set(stateParam, state, cookieExpiry, w)
 	log.WithField("func", "server.HandleAuthFlow").Debugf("initiate using state '%s'", state)
@@ -185,7 +185,7 @@ func (a *handlers) HandleAuthFlow(w http.ResponseWriter, r *http.Request) error 
 }
 
 // HandleOIDCRedirectFinal is responsible to set the state cookie for the OIDC interaction
-func (a *handlers) HandleOIDCRedirectFinal(w http.ResponseWriter, r *http.Request) error {
+func (a *loginAPI) HandleOIDCRedirectFinal(w http.ResponseWriter, r *http.Request) error {
 	state := a.appCookie.Get(stateParam, r)
 	if state == "" {
 		log.WithField("func", "server.HandleOIDCRedirectFinal").Debugf("emptiy state from cookie, referrer: '%s'", r.Referer())
@@ -200,7 +200,7 @@ func (a *handlers) HandleOIDCRedirectFinal(w http.ResponseWriter, r *http.Reques
 // the user of the external authentication provider is checked against
 // the database. If a match is found a token with the valid claims is created
 // and a redirect is made to the defined URL
-func (a *handlers) HandleOIDCLogin(w http.ResponseWriter, r *http.Request) error {
+func (a *loginAPI) HandleOIDCLogin(w http.ResponseWriter, r *http.Request) error {
 	ctx := context.Background()
 
 	// read the stateParam again
@@ -263,7 +263,7 @@ func (a *handlers) HandleOIDCLogin(w http.ResponseWriter, r *http.Request) error
 		success = false
 	}
 
-	if sites == nil || len(sites) == 0 {
+	if len(sites) == 0 {
 		log.WithField("func", "server.HandleOIDCLogin").Warnf("successfull login by '%s' but no sites availabel!", oidcClaims.Email)
 		success = false
 	}
@@ -339,7 +339,7 @@ func (a *handlers) HandleOIDCLogin(w http.ResponseWriter, r *http.Request) error
 }
 
 // HandleLogout invalidates the authenticated user
-func (a *handlers) HandleLogout(user security.User, w http.ResponseWriter, r *http.Request) error {
+func (a *loginAPI) HandleLogout(user security.User, w http.ResponseWriter, r *http.Request) error {
 	log.WithField("func", "server.HandleLogout").Debugf("for user '%s'", user.Username)
 	// remove the cookie by expiring it
 	a.setJWTCookie(a.jwt.CookieName, "", -1, w)
@@ -348,7 +348,7 @@ func (a *handlers) HandleLogout(user security.User, w http.ResponseWriter, r *ht
 	return nil
 }
 
-func (a *handlers) setJWTCookie(name, value string, exp int, w http.ResponseWriter) {
+func (a *loginAPI) setJWTCookie(name, value string, exp int, w http.ResponseWriter) {
 	cookie := http.Cookie{
 		Name:     name,
 		Value:    value,

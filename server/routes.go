@@ -8,9 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bihe/commons-go/cookies"
 	"github.com/bihe/commons-go/security"
-	"github.com/bihe/login-go/server/api"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 
@@ -18,8 +16,8 @@ import (
 	httpSwagger "github.com/swaggo/http-swagger"
 )
 
-// NewRouter instantiates a new router type
-func NewRouter(basePath string, a api.API, cookieSettings cookies.Settings, jwtOpts security.JwtOptions) chi.Router {
+// routes performs setup of middlewares and API handlers
+func (s *server) routes() {
 	r := chi.NewRouter()
 
 	// A good base middleware stack
@@ -32,30 +30,30 @@ func NewRouter(basePath string, a api.API, cookieSettings cookies.Settings, jwtO
 	r.Use(middleware.Timeout(60 * time.Second))
 
 	// serving static content
-	serveStaticFile(r, "/favicon.ico", filepath.Join(basePath, "./assets/favicon.ico"))
-	serveStaticDir(r, "/assets", http.Dir(filepath.Join(basePath, "./assets")))
+	serveStaticFile(r, "/favicon.ico", filepath.Join(s.basePath, "./assets/favicon.ico"))
+	serveStaticDir(r, "/assets", http.Dir(filepath.Join(s.basePath, "./assets")))
 
-	r.Get("/error", a.Call(a.HandleError))
-	r.Get("/start-oidc", a.Call(a.HandleOIDCRedirect))
-	r.Get("/auth/flow", a.Call(a.HandleAuthFlow))
-	r.Get(a.GetOIDCRedirectURL(), a.Call(a.HandleOIDCRedirectFinal))
-	r.Get("/signin-oidc", a.Call(a.HandleOIDCLogin))
+	r.Get("/error", s.api.Call(s.api.HandleError))
+	r.Get("/start-oidc", s.api.Call(s.api.HandleOIDCRedirect))
+	r.Get("/auth/flow", s.api.Call(s.api.HandleAuthFlow))
+	r.Get(s.api.GetOIDCRedirectURL(), s.api.Call(s.api.HandleOIDCRedirectFinal))
+	r.Get("/signin-oidc", s.api.Call(s.api.HandleOIDCLogin))
 
 	// this group "indicates" that all routes within this group use the JWT authentication
 	r.Group(func(r chi.Router) {
 		// authenticate and authorize users via JWT
-		r.Use(security.NewJwtMiddleware(jwtOpts, cookieSettings).JwtContext)
+		r.Use(security.NewJwtMiddleware(s.jwtOpts, s.cookieSettings).JwtContext)
 
-		r.Get("/logout", a.Secure(a.HandleLogout))
+		r.Get("/logout", s.api.Secure(s.api.HandleLogout))
 
 		// group API methods together
 		r.Route("/api/v1", func(r chi.Router) {
-			r.Get("/appinfo", a.Secure(a.HandleAppInfo))
-			r.Get("/sites", a.Secure(a.HandleGetSites))
-			r.Post("/sites", a.Secure(a.HandleSaveSites))
+			r.Get("/appinfo", s.api.Secure(s.api.HandleAppInfo))
+			r.Get("/sites", s.api.Secure(s.api.HandleGetSites))
+			r.Post("/sites", s.api.Secure(s.api.HandleSaveSites))
 		})
 		// the SPA
-		serveStaticDir(r, "/ui", http.Dir(filepath.Join(basePath, "./assets/ui")))
+		serveStaticDir(r, "/ui", http.Dir(filepath.Join(s.basePath, "./assets/ui")))
 
 		// swagger
 		r.Get("/swagger/*", httpSwagger.Handler(
@@ -64,9 +62,12 @@ func NewRouter(basePath string, a api.API, cookieSettings cookies.Settings, jwtO
 	})
 
 	r.Get("/", http.RedirectHandler("/ui", http.StatusMovedPermanently).ServeHTTP)
-
-	return r
+	s.router = r
 }
+
+// --------------------------------------------------------------------------
+// internal logic / helpers
+// --------------------------------------------------------------------------
 
 func serveStaticDir(r chi.Router, public string, static http.Dir) {
 	if strings.ContainsAny(public, "{}*") {
@@ -83,7 +84,7 @@ func serveStaticDir(r chi.Router, public string, static http.Dir) {
 	r.Get(public+"*", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		file := strings.Replace(r.RequestURI, public, "", 1)
 		// if the file contains URL params, remove everything after ?
-		if strings.Index(file, "?") > -1 {
+		if strings.Contains(file, "?") {
 			parts := strings.Split(file, "?")
 			if len(parts) == 2 {
 				file = parts[0] // use everything before the ?

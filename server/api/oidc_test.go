@@ -109,7 +109,7 @@ func TestErrorPage(t *testing.T) {
 	r.ServeHTTP(rec, req)
 	assert.Equal(t, http.StatusOK, rec.Code)
 
-	body := string(rec.Body.Bytes())
+	body := rec.Body.String()
 	if body == "" {
 		t.Errorf("could not get the template!")
 	}
@@ -378,10 +378,10 @@ func TestLogout(t *testing.T) {
 
 }
 
-func newAPIRouter() (chi.Router, *handlers) {
+func newAPIRouter() (chi.Router, *loginAPI) {
 	r := chi.NewRouter()
 	a := New("templatepath", cookieSettings, version, oauthConfig, jwtConfig, &mockRepository{})
-	api := a.(*handlers)
+	api := a.(*loginAPI)
 	return r, api
 
 }

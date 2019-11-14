@@ -1,3 +1,4 @@
+// Package server defines the HTTP server and performs the setup for the API
 package server
 
 import (
@@ -27,17 +28,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// Args is uded to configure the API server
-type Args struct {
-	HostName   string
-	Port       int
-	ConfigFile string
-	BasePath   string
-}
-
 // Run configures and starts the Server
 func Run(version, build, runtime string) (err error) {
-	srv := setupServer(version, build, runtime)
+	srv := setup(version, build, runtime)
 	go func() {
 		fmt.Printf("%s Starting server ...\n", emoji.EmojiTagToUnicode(`:rocket:`))
 		fmt.Printf("%s Listening on '%s'\n", emoji.EmojiTagToUnicode(`:computer:`), srv.Addr)
@@ -51,15 +44,7 @@ func Run(version, build, runtime string) (err error) {
 	return graceful(srv, 5*time.Second)
 }
 
-// --------------------------------------------------------------------------
-// internal logic / helpers
-// --------------------------------------------------------------------------
-
-type server struct {
-	router chi.Router
-}
-
-func setupServer(version, build, runtime string) *http.Server {
+func setup(version, build, runtime string) *http.Server {
 	v := internal.VersionInfo{
 		Version: version,
 		Build:   build,
@@ -69,50 +54,13 @@ func setupServer(version, build, runtime string) *http.Server {
 	args := parseFlags()
 	config := configFromFile(args.ConfigFile)
 
-	apiSrv := createServer(args.BasePath, config, v)
+	//apiSrv := createServer(args.BasePath, config, v)
+	apiSrv := newServer(args.BasePath, config, v)
 	setupLog(config)
 	log.SetLevel(log.DebugLevel)
 	addr := fmt.Sprintf("%s:%d", args.HostName, args.Port)
 	srv := &http.Server{Addr: addr, Handler: apiSrv.router}
 	return srv
-}
-
-func createServer(basePath string, config config.AppConfig, version internal.VersionInfo) *server {
-	base, err := filepath.Abs(basePath)
-	if err != nil {
-		panic(fmt.Sprintf("cannot resolve basepath '%s', %v", basePath, err))
-	}
-
-	// configure JWT authentication and use JWT middleware
-	jwtOpts := security.JwtOptions{
-		JwtSecret:  config.Sec.JwtSecret,
-		JwtIssuer:  config.Sec.JwtIssuer,
-		CookieName: config.Sec.CookieName,
-		RequiredClaim: security.Claim{
-			Name:  config.Sec.Claim.Name,
-			URL:   config.Sec.Claim.URL,
-			Roles: config.Sec.Claim.Roles,
-		},
-		RedirectURL:   config.Sec.LoginRedirect,
-		CacheDuration: config.Sec.CacheDuration,
-	}
-	cookieSettings := cookies.Settings{
-		Path:   config.AppCookies.Path,
-		Domain: config.AppCookies.Domain,
-		Secure: config.AppCookies.Secure,
-		Prefix: config.AppCookies.Prefix,
-	}
-	con := per.NewConn(config.DB.ConnStr)
-	repo, err := persistence.NewRepository(con)
-	if err != nil {
-		panic(fmt.Sprintf("could not create a repository: %v", err))
-	}
-
-	apiSrv := api.New(base, cookieSettings, version, config.OIDC, config.Sec, repo)
-
-	return &server{
-		router: NewRouter(base, apiSrv, cookieSettings, jwtOpts),
-	}
 }
 
 func graceful(s *http.Server, timeout time.Duration) error {
@@ -131,8 +79,74 @@ func graceful(s *http.Server, timeout time.Duration) error {
 	return nil
 }
 
-func parseFlags() *Args {
-	c := new(Args)
+// --------------------------------------------------------------------------
+// internal logic to setup the server
+// --------------------------------------------------------------------------
+
+type server struct {
+	// settings and configuration
+	basePath       string
+	cookieSettings cookies.Settings
+	jwtOpts        security.JwtOptions
+	// routing and handlers
+	router chi.Router
+	api    api.Login
+}
+
+func newServer(basePath string, config config.AppConfig, version internal.VersionInfo) *server {
+	base, err := filepath.Abs(basePath)
+	if err != nil {
+		panic(fmt.Sprintf("cannot resolve basepath '%s', %v", basePath, err))
+	}
+	con := per.NewConn(config.DB.ConnStr)
+	repo, err := persistence.NewRepository(con)
+	if err != nil {
+		panic(fmt.Sprintf("could not create a repository: %v", err))
+	}
+
+	jwtOpts := security.JwtOptions{
+		JwtSecret:  config.Sec.JwtSecret,
+		JwtIssuer:  config.Sec.JwtIssuer,
+		CookieName: config.Sec.CookieName,
+		RequiredClaim: security.Claim{
+			Name:  config.Sec.Claim.Name,
+			URL:   config.Sec.Claim.URL,
+			Roles: config.Sec.Claim.Roles,
+		},
+		RedirectURL:   config.Sec.LoginRedirect,
+		CacheDuration: config.Sec.CacheDuration,
+	}
+	cookieSettings := cookies.Settings{
+		Path:   config.AppCookies.Path,
+		Domain: config.AppCookies.Domain,
+		Secure: config.AppCookies.Secure,
+		Prefix: config.AppCookies.Prefix,
+	}
+
+	srv := server{
+		basePath:       base,
+		cookieSettings: cookieSettings,
+		jwtOpts:        jwtOpts,
+		api:            api.New(base, cookieSettings, version, config.OIDC, config.Sec, repo),
+	}
+	srv.routes()
+	return &srv
+}
+
+// --------------------------------------------------------------------------
+// internal logic / helpers
+// --------------------------------------------------------------------------
+
+// args is used to configure the API server
+type args struct {
+	HostName   string
+	Port       int
+	ConfigFile string
+	BasePath   string
+}
+
+func parseFlags() *args {
+	c := new(args)
 	flag.StringVar(&c.HostName, "hostname", "localhost", "the server hostname")
 	flag.IntVar(&c.Port, "port", 3000, "network port to listen")
 	flag.StringVar(&c.BasePath, "b", "./", "the base path of the appliction")
@@ -162,8 +176,5 @@ func configFromFile(configFileName string) config.AppConfig {
 
 func fileExists(filename string) bool {
 	_, err := os.Stat(filename)
-	if os.IsNotExist(err) {
-		return false
-	}
-	return true
+	return !os.IsNotExist(err)
 }

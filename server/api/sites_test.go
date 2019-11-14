@@ -19,7 +19,7 @@ import (
 func TestGetSites(t *testing.T) {
 	r := chi.NewRouter()
 	a := New("templatepath", cookieSettings, version, oauthConfig, jwtConfig, &mockRepository{})
-	api := a.(*handlers)
+	api := a.(*loginAPI)
 
 	api.repo = &mockRepository{}
 	api.editRole = "role"
@@ -58,7 +58,7 @@ func TestGetSites(t *testing.T) {
 func TestFailSites(t *testing.T) {
 	r := chi.NewRouter()
 	a := New("templatepath", cookieSettings, version, oauthConfig, jwtConfig, &mockRepository{})
-	api := a.(*handlers)
+	api := a.(*loginAPI)
 
 	api.repo = &mockRepository{fail: true}
 	api.editRole = "role"
@@ -93,7 +93,7 @@ func TestFailSites(t *testing.T) {
 func TestSaveSites(t *testing.T) {
 	r := chi.NewRouter()
 	a := New("templatepath", cookieSettings, version, oauthConfig, jwtConfig, &mockRepository{})
-	api := a.(*handlers)
+	api := a.(*loginAPI)
 
 	api.repo = &mockRepository{fail: false}
 	api.editRole = "role"
@@ -130,7 +130,7 @@ func TestSaveSites(t *testing.T) {
 func TestSaveSitesFail(t *testing.T) {
 	r := chi.NewRouter()
 	a := New("templatepath", cookieSettings, version, oauthConfig, jwtConfig, &mockRepository{})
-	api := a.(*handlers)
+	api := a.(*loginAPI)
 
 	api.repo = &mockRepository{fail: true}
 	api.editRole = "role"
@@ -172,7 +172,7 @@ func TestSaveSitesFail(t *testing.T) {
 func TestSaveSitesNoPayload(t *testing.T) {
 	r := chi.NewRouter()
 	a := New("templatepath", cookieSettings, version, oauthConfig, jwtConfig, &mockRepository{})
-	api := a.(*handlers)
+	api := a.(*loginAPI)
 
 	api.repo = &mockRepository{fail: true}
 	api.editRole = "role"
@@ -207,7 +207,7 @@ func TestSaveSitesNoPayload(t *testing.T) {
 func TestSaveSitesNotAllowed(t *testing.T) {
 	r := chi.NewRouter()
 	a := New("templatepath", cookieSettings, version, oauthConfig, jwtConfig, &mockRepository{})
-	api := a.(*handlers)
+	api := a.(*loginAPI)
 
 	api.repo = &mockRepository{fail: true}
 	api.editRole = "missing-role"
