@@ -78,6 +78,7 @@ var jwtOpts = security.JwtOptions{
 	GetSitesByUser(user string) ([]UserSite, error)
 	StoreSiteForUser(user string, sites []UserSite, a Atomic) (err error)
 	StoreLogin(login Login, a Atomic) (err error)
+	GetUsersForSite(site string) ([]string, error)
 */
 
 var _ persistence.Repository = (*mockRepository)(nil)
@@ -117,4 +118,15 @@ func (m *mockRepository) StoreLogin(login persistence.Login, a per.Atomic) (err 
 		return Err
 	}
 	return nil
+}
+
+func (m *mockRepository) GetUsersForSite(site string) ([]string, error) {
+	if m.fail {
+		return nil, Err
+	}
+
+	return []string{
+		"user1",
+		"user2",
+	}, nil
 }

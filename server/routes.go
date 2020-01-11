@@ -51,6 +51,7 @@ func (s *server) routes() {
 			r.Get("/appinfo", s.api.Secure(s.api.HandleAppInfo))
 			r.Get("/sites", s.api.Secure(s.api.HandleGetSites))
 			r.Post("/sites", s.api.Secure(s.api.HandleSaveSites))
+			r.Get("/sites/users/{siteName}", s.api.Secure((s.api.HandleGetUsersForSite)))
 		})
 		// the SPA
 		serveStaticDir(r, "/ui", http.Dir(filepath.Join(s.basePath, "./assets/ui")))

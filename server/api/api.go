@@ -50,6 +50,12 @@ type UserInfo struct {
 	Roles       []string `json:"roles"`
 }
 
+// UserList holds the usernames for a given site
+type UserList struct {
+	Count int      `json:"count"`
+	Users []string `json:"users"`
+}
+
 // --------------------------------------------------------------------------
 // API Interface
 // --------------------------------------------------------------------------
@@ -70,6 +76,7 @@ type Login interface {
 	// sites
 	HandleGetSites(user security.User, w http.ResponseWriter, r *http.Request) error
 	HandleSaveSites(user security.User, w http.ResponseWriter, r *http.Request) error
+	HandleGetUsersForSite(user security.User, w http.ResponseWriter, r *http.Request) error
 
 	// wrapper methods
 	Secure(f func(user security.User, w http.ResponseWriter, r *http.Request) error) http.HandlerFunc
@@ -188,4 +195,15 @@ func (a *loginAPI) hasRole(user security.User, role string) bool {
 		}
 	}
 	return false
+}
+
+func query(r *http.Request, name string) string {
+	keys, ok := r.URL.Query()[name]
+
+	if !ok || len(keys[0]) < 1 {
+		log.WithField("func", "server.getQuery").Debugf("Url Param '%s' is missing", name)
+		return ""
+	}
+
+	return keys[0]
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/bihe/commons-go/errors"
 	"github.com/bihe/commons-go/security"
 	"github.com/bihe/login-go/internal/persistence"
+	"github.com/go-chi/chi"
 
 	per "github.com/bihe/commons-go/persistence"
 	log "github.com/sirupsen/logrus"
@@ -89,5 +90,30 @@ func (a *loginAPI) HandleSaveSites(user security.User, w http.ResponseWriter, r 
 		return errors.ServerError{Err: fmt.Errorf("could not save payload: %v", err), Request: r}
 	}
 	w.WriteHeader(http.StatusCreated)
+	return nil
+}
+
+// HandleGetUsersForSite godoc
+// @Summary returns the users for a given site
+// @Description determine users who have access to a given site and return them
+// @Tags sites
+// @Produce  json
+// @Success 200 {object} api.UserList
+// @Failure 401 {object} errors.ProblemDetail
+// @Failure 403 {object} errors.ProblemDetail
+// @Failure 404 {object} errors.ProblemDetail
+// @Router /sites/users/{siteName} [get]
+func (a *loginAPI) HandleGetUsersForSite(user security.User, w http.ResponseWriter, r *http.Request) error {
+	siteName := chi.URLParam(r, "siteName")
+	users, err := a.repo.GetUsersForSite(siteName)
+	if err != nil {
+		log.Warnf("cannot get users for site '%s', %v", siteName, err)
+		return errors.NotFoundError{Err: fmt.Errorf("no users available for given site '%s'", siteName), Request: r}
+	}
+
+	a.respond(w, r, http.StatusOK, UserList{
+		Count: len(users),
+		Users: users,
+	})
 	return nil
 }

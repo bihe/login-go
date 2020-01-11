@@ -289,3 +289,59 @@ func TestStoreLogin(t *testing.T) {
 		t.Errorf(expectations, err)
 	}
 }
+
+func TestGetUsersForSite(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf(fatalErr, err)
+	}
+	defer db.Close()
+
+	dbx := sqlx.NewDb(db, "mysql")
+	c := per.NewFromDB(dbx)
+	repo := dbRepository{c}
+
+	q := "SELECT user FROM USERSITE"
+	columns := []string{"user"}
+	errCould := "could not get users for site: %v"
+	site := "site"
+
+	// success
+	rows := sqlmock.NewRows(columns).
+		AddRow("user1").
+		AddRow("user2")
+	mock.ExpectQuery(q).WithArgs(site).WillReturnRows(rows)
+
+	sites, err := repo.GetUsersForSite(site)
+	if err != nil {
+		t.Errorf(errCould, err)
+	}
+	if len(sites) != 2 {
+		t.Errorf("expected 2 items, got %d", len(sites))
+	}
+
+	// no results
+	rows = sqlmock.NewRows(columns)
+	mock.ExpectQuery(q).WillReturnRows(rows)
+
+	sites, err = repo.GetUsersForSite(site)
+	if err != nil {
+		t.Errorf(errCould, err)
+	}
+	if len(sites) != 0 {
+		t.Errorf("expected 0 items, got %d", len(sites))
+	}
+
+	// error
+	mock.ExpectQuery(q).WillReturnError(Err)
+
+	sites, err = repo.GetUsersForSite(site)
+	if err == nil {
+		t.Errorf(errExpected)
+	}
+
+	// we make sure that all expectations were met
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf(expectations, err)
+	}
+}

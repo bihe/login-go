@@ -365,14 +365,3 @@ func randToken() string {
 	u := uuid.New()
 	return u.String()
 }
-
-func query(r *http.Request, name string) string {
-	keys, ok := r.URL.Query()[name]
-
-	if !ok || len(keys[0]) < 1 {
-		log.WithField("func", "server.getQuery").Debugf("Url Param '%s' is missing", name)
-		return ""
-	}
-
-	return keys[0]
-}

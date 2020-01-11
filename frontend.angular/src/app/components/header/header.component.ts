@@ -1,11 +1,10 @@
 import { Component, OnInit } from '@angular/core';
-import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
-import { Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material';
+import { DomSanitizer } from '@angular/platform-browser';
+import { Router } from '@angular/router';
+import { AppInfo } from '../../shared/service/app.info.model';
 import { ApplicationState } from '../../shared/service/application.state';
 import { MessageUtils } from '../../shared/utils/message.utils';
-import { UserInfo } from '../../shared/models/user.info.model';
-import { AppInfo } from '../../shared/service/app.info.model';
 
 @Component({
   selector: 'app-header',
@@ -17,6 +16,7 @@ export class HeaderComponent implements OnInit {
   menuVisible = false;
   showProgress = false;
   appInfo: AppInfo;
+  year: number = new Date().getFullYear();
 
   constructor(
     private state: ApplicationState,

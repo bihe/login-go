@@ -49,6 +49,7 @@ type Repository interface {
 	GetSitesByUser(user string) ([]UserSite, error)
 	StoreSiteForUser(user string, sites []UserSite, a per.Atomic) (err error)
 	StoreLogin(login Login, a per.Atomic) (err error)
+	GetUsersForSite(site string) ([]string, error)
 }
 
 // NewRepository creates a new instance using an existing connection
@@ -163,4 +164,18 @@ func (repo *dbRepository) StoreLogin(login Login, a per.Atomic) (err error) {
 	}
 
 	return nil
+}
+
+func (repo *dbRepository) GetUsersForSite(site string) ([]string, error) {
+	var (
+		err   error
+		users []string
+	)
+	query := "SELECT user FROM USERSITE WHERE name = ?"
+
+	if err = repo.c.Select(&users, query, strings.ToLower(site)); err != nil {
+		err = fmt.Errorf("could not get the users for site '%s': %v", site, err)
+		return nil, err
+	}
+	return users, nil
 }

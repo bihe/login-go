@@ -238,3 +238,52 @@ func TestSaveSitesNotAllowed(t *testing.T) {
 		t.Errorf("could not get valid json: %v", err)
 	}
 }
+
+func TestGetUsersForSite(t *testing.T) {
+	r := chi.NewRouter()
+	a := New("templatepath", cookieSettings, version, oauthConfig, jwtConfig, &mockRepository{})
+	api := a.(*loginAPI)
+
+	api.repo = &mockRepository{}
+	api.editRole = "role"
+
+	r.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := context.WithValue(r.Context(), c.User, &security.User{
+				Username:    "username",
+				Email:       "a.b@c.de",
+				DisplayName: "displayname",
+				Roles:       []string{"role"},
+				UserID:      "12345",
+			})
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	})
+	r.Get("/sites/users/site", api.Secure(api.HandleGetUsersForSite))
+
+	rec := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/sites/users/site", nil)
+
+	r.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+	var u UserList
+	err := json.Unmarshal(rec.Body.Bytes(), &u)
+	if err != nil {
+		t.Errorf("could not get valid json: %v", err)
+	}
+
+	assert.Equal(t, 2, u.Count)
+	assert.Equal(t, "user1", u.Users[0])
+
+	// fail
+	api.repo = &mockRepository{fail: true}
+	r.Get("/sites/users/site", api.Secure(api.HandleGetUsersForSite))
+
+	rec = httptest.NewRecorder()
+	req, _ = http.NewRequest("GET", "/sites/users/site", nil)
+
+	r.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusNotFound, rec.Code)
+}
