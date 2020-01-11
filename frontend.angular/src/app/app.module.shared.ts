@@ -1,5 +1,5 @@
 import { NgModule } from '@angular/core';
-import { MatProgressSpinnerModule, MatSnackBarModule, MatTooltipModule } from '@angular/material';
+import { MatBadgeModule, MatCardModule, MatProgressSpinnerModule, MatSnackBarModule, MatTooltipModule } from '@angular/material';
 // import { MatCardModule } from '@angular/material/card';
 // import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatButtonModule } from '@angular/material/button';
@@ -9,6 +9,7 @@ import { EditComponent } from './components/edit/edit.component';
 import { FooterComponent } from './components/footer/footer.component';
 import { HeaderComponent } from './components/header/header.component';
 import { HomeComponent } from './components/home/home.component';
+import { DateFormatPipe } from './shared/pipes/dateformat';
 import { EllipsisPipe } from './shared/pipes/ellipsis';
 import { ApiAppInfoService } from './shared/service/api.app.service';
 import { ApiUserService } from './shared/service/api.sites.service';
@@ -16,8 +17,8 @@ import { ApplicationState } from './shared/service/application.state';
 
 
 @NgModule({
-  imports: [ MatProgressSpinnerModule, MatTooltipModule, MatSnackBarModule, MatButtonModule, MatChipsModule ],
-  exports: [ MatProgressSpinnerModule, MatTooltipModule, MatSnackBarModule, MatButtonModule, MatChipsModule ],
+  imports: [ MatProgressSpinnerModule, MatTooltipModule, MatSnackBarModule, MatButtonModule, MatChipsModule, MatCardModule, MatBadgeModule ],
+  exports: [ MatProgressSpinnerModule, MatTooltipModule, MatSnackBarModule, MatButtonModule, MatChipsModule, MatCardModule, MatBadgeModule ],
 })
 export class AppMaterialModule { }
 
@@ -29,7 +30,8 @@ export const sharedConfig: NgModule = {
         EditComponent,
         FooterComponent,
         HeaderComponent,
-        EllipsisPipe
+        EllipsisPipe,
+        DateFormatPipe
     ],
     imports: [
         AppMaterialModule

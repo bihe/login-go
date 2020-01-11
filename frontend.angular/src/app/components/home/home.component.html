@@ -1,31 +1,27 @@
-<div class="card_content">
-    <div class="heading">
-      <h1 class="display-3">Central login for all binggl.net applications.</h1>
-    </div>
+<div class="dashboard">
 
-    <section class="card-container">
-
-      <article class="card" *ngFor="let item of userInfo?.userSites" id="{{ item.name }}">
-          <header class="card__title">
-              <h5><i class="fa fa-external-link" aria-hidden="true"></i>&nbsp;<a href="{{ item.url }}">{{ item.name }}</a></h5>
-          </header>
-          <main class="card__description">
-              URL: <a href="{{ item.url }}">{{ item.url }}</a>
-          </main>
-          <footer>
-            <mat-chip-list>
-                <mat-chip *ngFor="let perm of item?.permissions">
-                  <span class="permission">
-                    <i class="fa fa-hashtag" aria-hidden="true"></i>&nbsp;{{ perm | ellipsis: 15 }}
-                  </span>
-                </mat-chip>
-            </mat-chip-list>
-
-          </footer>
-      </article>
-
-    </section>
-
-
-    <button *ngIf="userInfo?.editable" mat-fab color="accent" class="edit" (click)="edit()"><i class="fa fa-cogs fa-2x" aria-hidden="true"></i></button>
+  <div class="heading">
+    <h1 class="display-5">Central login for all binggl.net applications.</h1>
   </div>
+
+  <mat-card class="dashboard_card" *ngFor="let item of userInfo?.userSites; let i = index" id="{{ item.id }}" >
+    <mat-card-title>
+      <a class="dashboard_card_title" href="{{ item.url }}" target="_blank">{{ item.name | ellipsis: 20}}</a>
+    </mat-card-title>
+    <mat-card-content>
+      <img src="assets/favicon.ico"
+        class="bookmark_favicon"
+        loading="lazy"
+        width="16px" height="16px"
+        alt="favicon"/>
+      &nbsp;
+      <a href="{{ item.url }}" target="_blank">{{ item.url | ellipsis:25 }}</a>
+    </mat-card-content>
+    <mat-card-footer class="dashboard_card_footer">
+      roles: <span class="permission" *ngFor="let perm of item?.permissions"><i class="fa fa-hashtag" aria-hidden="true"></i>{{ perm | ellipsis: 15 }}</span>
+    </mat-card-footer>
+  </mat-card>
+
+
+  <button *ngIf="userInfo?.editable" mat-fab color="accent" class="edit" (click)="edit()"><i class="fa fa-cogs fa-2x" aria-hidden="true"></i></button>
+</div>

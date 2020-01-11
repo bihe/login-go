@@ -3,7 +3,7 @@ div.navmenu {
   width: 100%;
   top: 0;
   left: 0;
-  height: 68px;
+  height: 45px;
   box-shadow: 0 2px 1px -1px rgba(0,0,0,.2), 0 1px 1px 0 rgba(0,0,0,.14), 0 1px 3px 0 rgba(0,0,0,.12);
   z-index: 1;
 
@@ -59,11 +59,25 @@ div.navinfo {
   padding-left: 15px;
   font-weight: bold;
   font-size: 18pt;
+  font-family: 'Source Code Pro', monospace;
+}
+
+@media (max-width: 575.98px) {
+
+  div.navinfo {
+    flex: 1 1 1px;
+    box-sizing: border-box;
+    padding-left: 3px;
+    font-weight: bold;
+    font-size: 1.2em;
+    font-family: 'Source Code Pro', monospace;
+  }
+
 }
 
 .app-title {
-font-size: 1.5em;
-font-weight: bold;
+  font-size: 1.5em;
+  font-weight: bold;
 }
 
 .link {
@@ -147,13 +161,13 @@ opacity: 1;
 
 
 .menu__header {
-height: 150px;
-color: #fff;
+  height: 150px;
+  color: #fff;
 
-background: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNSIgaGVpZ2h0PSIxNSI+CjxyZWN0IHdpZHRoPSI1MCIgaGVpZ2h0PSI1MCIgZmlsbD0iIzI4MjgyOCI+PC9yZWN0Pgo8Y2lyY2xlIGN4PSIzIiBjeT0iNC4zIiByPSIxLjgiIGZpbGw9IiMzOTM5MzkiPjwvY2lyY2xlPgo8Y2lyY2xlIGN4PSIzIiBjeT0iMyIgcj0iMS44IiBmaWxsPSJibGFjayI+PC9jaXJjbGU+CjxjaXJjbGUgY3g9IjEwLjUiIGN5PSIxMi41IiByPSIxLjgiIGZpbGw9IiMzOTM5MzkiPjwvY2lyY2xlPgo8Y2lyY2xlIGN4PSIxMC41IiBjeT0iMTEuMyIgcj0iMS44IiBmaWxsPSJibGFjayI+PC9jaXJjbGU+Cjwvc3ZnPg==");
+  /*background: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNSIgaGVpZ2h0PSIxNSI+CjxyZWN0IHdpZHRoPSI1MCIgaGVpZ2h0PSI1MCIgZmlsbD0iIzI4MjgyOCI+PC9yZWN0Pgo8Y2lyY2xlIGN4PSIzIiBjeT0iNC4zIiByPSIxLjgiIGZpbGw9IiMzOTM5MzkiPjwvY2lyY2xlPgo8Y2lyY2xlIGN4PSIzIiBjeT0iMyIgcj0iMS44IiBmaWxsPSJibGFjayI+PC9jaXJjbGU+CjxjaXJjbGUgY3g9IjEwLjUiIGN5PSIxMi41IiByPSIxLjgiIGZpbGw9IiMzOTM5MzkiPjwvY2lyY2xlPgo8Y2lyY2xlIGN4PSIxMC41IiBjeT0iMTEuMyIgcj0iMS44IiBmaWxsPSJibGFjayI+PC9jaXJjbGU+Cjwvc3ZnPg==");*/
   background-color: #212f3d;
 
-border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid #ddd;
 }
 
 .menu__list {
@@ -176,26 +190,27 @@ cursor: pointer;
 }
 
 .user_info {
-right: 20px;
-top: 100px;
-position: absolute;
-font-size: 14pt;
-font-weight: bold;
+  left: 20px;
+  top: 100px;
+  position: absolute;
+  font-size: 1.2em;
+  font-weight: bold;
 }
 
 .progress {
   position: absolute;
-  top: 14px;
+  top: 3px;
   left: 21px;
   background-color: transparent;
 
 }
 
-.amount_toggle {
-font-size: 0.8em;
-
+.menu_bottom {
+  position: relative;
+  bottom: 300px;
+  padding-left: 20px;
 }
 
-.amount_toggle_text {
-font-weight: normal !important;
+.login_logo {
+  color: white;
 }

@@ -20,7 +20,7 @@
 
         <!-- INFO -->
         <div class="navinfo">
-          <i class="fa fa-user-circle-o" aria-hidden="true"></i> login.binggl.net
+          <i class="fa fa-lock login_logo" aria-hidden="true"></i>&nbsp;login.binggl.net
         </div>
 
         <!-- ACTIONS -->
@@ -44,6 +44,17 @@
   <ul class="menu__list">
     <li><i class="fa fa-home" aria-hidden="true"></i> <a href="#">Home</a></li>
   </ul>
+
+  <div class="menu_bottom">
+    <i class="fa fa-copyright" aria-hidden="true"></i> {{ year }} Henrik.Binggl
+    <br/><strong>login application</strong>
+    <br/><span class="fa fa-code-fork"></span>&nbsp;<span style="color:indigo">{{ appInfo?.version | ellipsis:25}}</span>
+    <br/>ui: <span style="color:darkviolet">{{ appInfo?.uiRuntime }}</span>
+    <br/><span class="fa fa-code"></span>&nbsp;<a href="/swagger/index.html">API documentation</a>
+
+  </div>
+
+
 </div>
 
 <div class="menu__overlay"

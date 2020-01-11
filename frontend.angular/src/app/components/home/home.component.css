@@ -1,124 +1,51 @@
-.card_content {
-  padding-left: 20px;
-  padding-right: 20px;
-}
-
 .heading {
   display: block;
   padding: 10px;
   font-family: 'Roboto Mono', 'Courier New', Courier, monospace;
 }
 
-
-/**
- * CARD layout
- * @see https://github.com/triceam/cards-ui/blob/master/assets/css/styles.css
- */
-
- .card {
-  background: #fff;
-  border-radius: 2px;
-  display: inline-block;
-  height: 250px;
-  margin: 1rem;
-  position: relative;
-  width: 280px;
-  overflow:hidden;
-  box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
-  transition: all 0.3s cubic-bezier(.25,.8,.25,1);
-}
-
-.card:hover {
-  box-shadow: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22);
-  cursor: pointer;
-}
-
-.card a {
-  color: #ffffff;
-}
-
-.card .card__description {
-  padding: 10px;
-}
-
-.card .card__description a {
-  color: #000000;
-  font-weight: bold;
-}
-
-.card footer {
-  margin-top: 10px;
-  padding: 5px;
-}
-
-.card footer .permission {
-  padding: 5px;
-}
-
-.mat-chip.mat-standard-chip  {
-  background-color: #f1c40f;
-  color: rgba(0,0,0,.87);
-}
-
-.card .card__title {
-  text-align: left;
-  padding-top: 10px;
-  padding-bottom: 10px;
-  padding-left: 10px;
-  color: white;
-  background-color:#1b4f72;
-}
-
-.card h1 {
-  margin:0px;
-  padding:10px;
-  padding-bottom:0px;
-}
-
-.card h2 {
-  margin:0px;
-  padding:5px;
-  padding-bottom:0px;
-}
-
-.card h3 {
-  margin-top:0px;
-  padding:5px;
-  padding-bottom:0px;
-}
-
-.card h4 {
-  margin-top:0px;
-  padding:5px;
-  padding-bottom:0px;
-}
-
-.card h5 {
-font-size: 1.1em;
-font-weight: bold;
-}
-
-.card p {
-  margin:0px;
-  padding:10px;
-}
-
-.card .cardheader {
-text-align: left;
-padding-top: 10px;
-padding-bottom: 10px;
-padding-left: 10px;
-color: white;
-background-color:#1b4f72;
-}
-
-.card .topic {
-font-size: 1.5em;
-font-weight:bold;
-}
-
 .edit {
   position: absolute;
   right: 20px;
   bottom: 20px;
+}
+
+.dashboard {
+  padding: 10px;
+  display: block;
+}
+
+.dashboard_card {
+  max-width: 400px;
+  display: inline-block;
+  margin: 20px;
+  min-width: 280px;
+  min-height: 150px;
+}
+
+.dashboard_card_title {
+  color: black;
+}
+
+.dashboard_card_title:hover {
+  text-decoration: none;
+}
+
+.dashboard_card_footer {
+  font-weight: normal;
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.8em;
+  padding: 5px;
+  text-align: right;
+  color: #999999;
+  position: absolute;
+  bottom: 15px;
+  right: 15px;
+}
+
+.permission {
+  padding: 2px;
+  margin-right: 2px;
+  color: black;
+  font-family: 'Roboto Mono', monospace;
 }
