@@ -1,4 +1,22 @@
-// Package api implements the HTTP API of the login-application
+// Package api implements the HTTP API of the login-application.
+//
+// the purpose of this application is to provide centralized authentication
+//
+// Terms Of Service:
+//
+//     Schemes: https
+//     Host: login.binggl.net
+//     BasePath: /api/v1
+//     Version: 1.0.0
+//     License: Apache 2.0 https://opensource.org/licenses/Apache-2.0
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+// swagger:meta
 package api
 
 import (
@@ -23,6 +41,7 @@ import (
 // --------------------------------------------------------------------------
 
 // UserSites holds information about the current user and sites
+// swagger:model
 type UserSites struct {
 	User     string     `json:"user"`
 	Editable bool       `json:"editable"`
@@ -30,6 +49,7 @@ type UserSites struct {
 }
 
 // SiteInfo holds data of a site
+// swagger:model
 type SiteInfo struct {
 	Name string   `json:"name"`
 	URL  string   `json:"url"`
@@ -37,6 +57,7 @@ type SiteInfo struct {
 }
 
 // Meta specifies application metadata
+// swagger:model
 type Meta struct {
 	Runtime string `json:"runtime"`
 	Version string `json:"version"`
@@ -51,6 +72,7 @@ type UserInfo struct {
 }
 
 // UserList holds the usernames for a given site
+// swagger:model
 type UserList struct {
 	Count int      `json:"count"`
 	Users []string `json:"users"`

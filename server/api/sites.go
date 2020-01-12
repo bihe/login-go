@@ -15,16 +15,32 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// HandleGetSites godoc
-// @Summary sites of current user
-// @Description returns all the sites of the current loged-in user
-// @Tags sites
-// @Produce  json
-// @Success 200 {object} api.UserSites
-// @Failure 401 {object} errors.ProblemDetail
-// @Failure 403 {object} errors.ProblemDetail
-// @Failure 404 {object} errors.ProblemDetail
-// @Router /api/v1/sites [get]
+// swagger:operation GET /sites sites HandleGetSites
+//
+// sites of current user
+//
+// returns all the sites of the current loged-in user
+//
+// ---
+// produces:
+// - application/json
+// responses:
+//   '200':
+//     description: UserSites
+//     schema:
+//       "$ref": "#/definitions/UserSites"
+//   '401':
+//     description: ProblemDetail
+//     schema:
+//       "$ref": "#/definitions/ProblemDetail"
+//   '403':
+//     description: ProblemDetail
+//     schema:
+//       "$ref": "#/definitions/ProblemDetail"
+//   '404':
+//     description: ProblemDetail
+//     schema:
+//       "$ref": "#/definitions/ProblemDetail"
 func (a *loginAPI) HandleGetSites(user security.User, w http.ResponseWriter, r *http.Request) error {
 	sites, err := a.repo.GetSitesByUser(user.Email)
 	if err != nil {
@@ -48,17 +64,30 @@ func (a *loginAPI) HandleGetSites(user security.User, w http.ResponseWriter, r *
 	return nil
 }
 
-// HandleSaveSites godoc
-// @Summary stores the given sites
-// @Description takes a list of sites and stores the supplied sites for the user
-// @Tags sites
-// @Produce  json
-// @Success 201
-// @Failure 400 {object} errors.ProblemDetail
-// @Failure 401 {object} errors.ProblemDetail
-// @Failure 403 {object} errors.ProblemDetail
-// @Failure 500 {object} errors.ProblemDetail
-// @Router /api/v1/sites [post]
+// swagger:operation POST /sites sites HandleSaveSites
+//
+// stores the given sites
+//
+// takes a list of sites and stores the supplied sites for the user
+//
+// ---
+// produces:
+// - application/json
+// responses:
+//   '201':
+//     description: Success
+//   '401':
+//     description: ProblemDetail
+//     schema:
+//       "$ref": "#/definitions/ProblemDetail"
+//   '403':
+//     description: ProblemDetail
+//     schema:
+//       "$ref": "#/definitions/ProblemDetail"
+//   '404':
+//     description: ProblemDetail
+//     schema:
+//       "$ref": "#/definitions/ProblemDetail"
 func (a *loginAPI) HandleSaveSites(user security.User, w http.ResponseWriter, r *http.Request) error {
 	if !a.hasRole(user, a.editRole) {
 		log.Warnf("user '%s' tried to save but does not have required permissions", user.Email)
@@ -93,16 +122,38 @@ func (a *loginAPI) HandleSaveSites(user security.User, w http.ResponseWriter, r 
 	return nil
 }
 
-// HandleGetUsersForSite godoc
-// @Summary returns the users for a given site
-// @Description determine users who have access to a given site and return them
-// @Tags sites
-// @Produce  json
-// @Success 200 {object} api.UserList
-// @Failure 401 {object} errors.ProblemDetail
-// @Failure 403 {object} errors.ProblemDetail
-// @Failure 404 {object} errors.ProblemDetail
-// @Router /sites/users/{siteName} [get]
+// swagger:operation GET /sites/users/{siteName} sites HandleGetUsersForSite
+//
+// returns the users for a given site
+//
+// determine users who have access to a given site and return them
+//
+// ---
+// produces:
+// - application/json
+// parameters:
+// - name: siteName
+//   in: path
+//   description: the name of the site
+//   required: true
+//   type: string
+// responses:
+//   '200':
+//     description: UserList
+//     schema:
+//       "$ref": "#/definitions/UserList"
+//   '401':
+//     description: ProblemDetail
+//     schema:
+//       "$ref": "#/definitions/ProblemDetail"
+//   '403':
+//     description: ProblemDetail
+//     schema:
+//       "$ref": "#/definitions/ProblemDetail"
+//   '404':
+//     description: ProblemDetail
+//     schema:
+//       "$ref": "#/definitions/ProblemDetail"
 func (a *loginAPI) HandleGetUsersForSite(user security.User, w http.ResponseWriter, r *http.Request) error {
 	siteName := chi.URLParam(r, "siteName")
 	users, err := a.repo.GetUsersForSite(siteName)
@@ -110,7 +161,6 @@ func (a *loginAPI) HandleGetUsersForSite(user security.User, w http.ResponseWrit
 		log.Warnf("cannot get users for site '%s', %v", siteName, err)
 		return errors.NotFoundError{Err: fmt.Errorf("no users available for given site '%s'", siteName), Request: r}
 	}
-
 	a.respond(w, r, http.StatusOK, UserList{
 		Count: len(users),
 		Users: users,

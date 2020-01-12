@@ -8,15 +8,28 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// HandleAppInfo godoc
-// @Summary provides information about the application
-// @Description meta-data of the application including authenticated user and version
-// @Tags appinfo
-// @Produce  json
-// @Success 200 {object} api.Meta
-// @Failure 401 {object} errors.ProblemDetail
-// @Failure 403 {object} errors.ProblemDetail
-// @Router /api/v1/appinfo [get]
+// swagger:operation GET /appinfo appinfo HandleAppInfo
+//
+// provides information about the application
+//
+// meta-data of the application including authenticated user and version
+//
+// ---
+// produces:
+// - application/json
+// responses:
+//   '200':
+//     description: Meta
+//     schema:
+//       "$ref": "#/definitions/Meta"
+//   '401':
+//     description: ProblemDetail
+//     schema:
+//       "$ref": "#/definitions/ProblemDetail"
+//   '403':
+//     description: ProblemDetail
+//     schema:
+//       "$ref": "#/definitions/ProblemDetail"
 func (a *loginAPI) HandleAppInfo(user security.User, w http.ResponseWriter, r *http.Request) error {
 	log.WithField("func", "server.HandleAppInfo").Debugf("return the application metadata info")
 	info := Meta{

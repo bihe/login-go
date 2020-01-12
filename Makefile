@@ -77,8 +77,8 @@ go-build-release:
 	GOOS=linux GOARCH=amd64 go build -ldflags="-w -s -X main.Version=${VERSION}${COMMIT} -X main.Build=${BUILD} -X main.Runtime=${RUNTIME}" -tags prod -o login.api cmd/server/main.go
 
 go-swagger:
-	# go get -u github.com/swaggo/swag/cmd/swag
-	swag init -g cmd/server/main.go
+	# https://github.com/go-swagger/go-swagger
+	swagger generate spec /o assets/swagger/swagger.json /m /w ./server/api
 
 go-clean:
 	@echo "  >  Cleaning build cache"

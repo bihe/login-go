@@ -11,9 +11,6 @@ import (
 	"github.com/bihe/commons-go/security"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
-
-	_ "github.com/bihe/login-go/docs" // import the swagger documentation
-	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 // routes performs setup of middlewares and API handlers
@@ -25,7 +22,7 @@ func (s *server) routes() {
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
 	r.Use(middleware.DefaultCompress)
-	r.Use(middleware.RedirectSlashes)
+	//r.Use(middleware.RedirectSlashes)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(60 * time.Second))
 
@@ -57,9 +54,7 @@ func (s *server) routes() {
 		serveStaticDir(r, "/ui", http.Dir(filepath.Join(s.basePath, "./assets/ui")))
 
 		// swagger
-		r.Get("/swagger/*", httpSwagger.Handler(
-			httpSwagger.URL("/swagger/doc.json"), //The url pointing to API definition"
-		))
+		serveStaticDir(r, "/swagger", http.Dir(filepath.Join(s.basePath, "./assets/swagger")))
 	})
 
 	r.Get("/", http.RedirectHandler("/ui", http.StatusMovedPermanently).ServeHTTP)
