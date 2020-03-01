@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.4.0
-	github.com/bihe/commons-go v1.0.9
+	github.com/bihe/commons-go v1.0.10
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/go-chi/chi v4.0.3+incompatible
 	github.com/go-chi/cors v1.0.0

@@ -1,8 +1,8 @@
 cloud.google.com/go v0.34.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 github.com/DATA-DOG/go-sqlmock v1.4.0 h1:yxQ63CFIA8Sxkh0vqIofuNrsXl/LZ42TpeTLV4Nb5HM=
 github.com/DATA-DOG/go-sqlmock v1.4.0/go.mod h1:3TucWNLPFOLcHhha1CPp7Kis1UG2h/AqGROPyOeZzsM=
-github.com/bihe/commons-go v1.0.9 h1:Kk3Ghxl2u9VzreEcEVIQWgJN/WuXd6p2CNeeCemD8fI=
-github.com/bihe/commons-go v1.0.9/go.mod h1:ReAI5TsJjIiqphz5wJrdzhyKGoorYXeJJwE9HoA7qnY=
+github.com/bihe/commons-go v1.0.10 h1:4XvZpjC3Mms+RteTNK4NBa9jPNiGUFPNXh/mUb8ctqk=
+github.com/bihe/commons-go v1.0.10/go.mod h1:ReAI5TsJjIiqphz5wJrdzhyKGoorYXeJJwE9HoA7qnY=
 github.com/coreos/go-oidc v2.2.1+incompatible h1:mh48q/BqXqgjVHpy2ZY7WnWAbenxRjsz9N1i1YxjHAk=
 github.com/coreos/go-oidc v2.2.1+incompatible/go.mod h1:CgnwVTmzoESiwO9qyAFEMiHoZ1nMCKZlZ9V6mm3/LKc=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
