@@ -1,11 +1,3 @@
-## fronted build-phase
-## --------------------------------------------------------------------------
-FROM node:lts-alpine AS FRONTEND-BUILD
-WORKDIR /frontend-build
-COPY ./frontend.angular .
-RUN yarn global add @angular/cli@latest && yarn install && yarn run build --prod --base-href /ui/
-## --------------------------------------------------------------------------
-
 ## backend build-phase
 ## --------------------------------------------------------------------------
 FROM golang:alpine AS BACKEND-BUILD
@@ -22,7 +14,7 @@ ENV COMMIT=${buildtime_varialbe_commit}
 
 WORKDIR /backend-build
 COPY . .
-RUN GOOS=linux GOARCH=amd64 go build -ldflags="-w -s -X main.Version=${VERSION}-${COMMIT} -X main.Build=${BUILD} -X main.Runtime=${RUNTIME}" -tags prod -o login.api cmd/server/main.go
+RUN GOOS=linux GOARCH=amd64 go build -ldflags="-w -s -X main.Version=${VERSION}-${COMMIT} -X main.Build=${BUILD}" -tags prod -o login.api cmd/server/*.go
 ## --------------------------------------------------------------------------
 
 ## runtime
@@ -30,15 +22,13 @@ RUN GOOS=linux GOARCH=amd64 go build -ldflags="-w -s -X main.Version=${VERSION}-
 FROM alpine:latest
 LABEL author="henrik@binggl.net"
 WORKDIR /opt/login
-RUN mkdir -p /opt/login/ui && mkdir -p /opt/login/etc && mkdir -p /opt/login/logs && mkdir -p /opt/login/templates && mkdir -p /opt/login/logs
+RUN mkdir -p /opt/login/etc && mkdir -p /opt/login/logs && mkdir -p /opt/login/templates && mkdir -p /opt/login/web
 ## required folders assets && templates
-COPY --from=BACKEND-BUILD /backend-build/assets /opt/login/assets
+COPY --from=BACKEND-BUILD /backend-build/web /opt/login/web
 COPY --from=BACKEND-BUILD /backend-build/templates /opt/login/templates
 ## the executable
 COPY --from=BACKEND-BUILD /backend-build/login.api /opt/login
-## the SPA frontend
-COPY --from=FRONTEND-BUILD /frontend-build/dist  /opt/login/ui
 
 EXPOSE 3000
 
-CMD ["/opt/login/login.api","--c=/opt/login/etc/application.json","--port=3000", "--hostname=0.0.0.0"]
+CMD ["/opt/login/login.api","--c=/opt/login/etc/application.json","--port=3000", "--hostname=0.0.0.0", "--e=Production"]

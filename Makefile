@@ -41,8 +41,6 @@ docker-build:
 docker-run:
 	@-$(MAKE) -s __docker-run
 
-frontend:
-	@-$(MAKE) do-frontend-build
 
 go-compile: go-clean go-build
 
@@ -70,15 +68,15 @@ go-test-coverage:
 
 go-build:
 	@echo "  >  Building binary ..."
-	go build -o login.api ./cmd/server/main.go
+	go build -o login.api ./cmd/server/*.go
 
 go-build-release:
 	@echo "  >  Building binary..."
-	GOOS=linux GOARCH=amd64 go build -ldflags="-w -s -X main.Version=${VERSION}${COMMIT} -X main.Build=${BUILD} -X main.Runtime=${RUNTIME}" -tags prod -o login.api cmd/server/main.go
+	GOOS=linux GOARCH=amd64 go build -ldflags="-w -s -X main.Version=${VERSION}${COMMIT} -X main.Build=${BUILD}" -tags prod -o login.api cmd/server/*.go
 
 go-swagger:
 	# https://github.com/go-swagger/go-swagger
-	swagger generate spec /o assets/swagger/swagger.json /m /w ./server/api
+	./tools/swagger_linux_amd64 generate spec -o web/assets/swagger/swagger.json -m -w ./internal/api
 
 go-clean:
 	@echo "  >  Cleaning build cache"
@@ -92,10 +90,6 @@ __docker-build:
 __docker-run:
 	@echo " ... running docker image"
 	docker run -it -p 127.0.0.1:3000:3000 -v "$(PWD)":/opt/login/etc login
-
-do-frontend-build:
-	@echo "  >  Building angular frontend ..."
-	cd ./frontend.angular;	npm install && npm run build -- --prod --base-href /ui/
 
 .PHONY: compile release test run clean coverage
 

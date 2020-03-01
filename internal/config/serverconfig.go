@@ -8,12 +8,13 @@ import (
 
 // AppConfig holds the application configuration
 type AppConfig struct {
-	Sec        Security           `json:"security"`
-	DB         Database           `json:"database"`
-	Log        LogConfig          `json:"logging"`
-	OIDC       OAuthConfig        `json:"oidc"`
-	AppCookies ApplicationCookies `json:"appCookies"`
-	StartURL   string             `json:"startUrl"`
+	Sec         Security           `json:"security"`
+	DB          Database           `json:"database"`
+	Log         LogConfig          `json:"logging"`
+	OIDC        OAuthConfig        `json:"oidc"`
+	AppCookies  ApplicationCookies `json:"appCookies"`
+	Environment string             `json:"environment"`
+	Cors        CorsSettings       `json:"cors"`
 }
 
 // Security settings for the application
@@ -55,6 +56,15 @@ type LogConfig struct {
 	FilePath    string `json:"filePath"`
 	RequestPath string `json:"requestPath"`
 	LogLevel    string `json:"logLevel"`
+}
+
+// CorsSettings specifies the used settings
+type CorsSettings struct {
+	AllowedOrigins   []string `json:"origins"`
+	AllowedMethods   []string `json:"methods"`
+	AllowedHeaders   []string `json:"headers"`
+	AllowCredentials bool     `json:"credentials"`
+	MaxAge           int      `json:"maxAge"`
 }
 
 // OAuthConfig is used to configure OAuth OpenID Connect

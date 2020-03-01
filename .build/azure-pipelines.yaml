@@ -4,18 +4,17 @@
 # https://docs.microsoft.com/azure/devops/pipelines/languages/go
 
 pool:
-  vmImage: 'Ubuntu 16.04'
+  vmImage: 'Ubuntu 18.04'
 
 variables:
   GOBIN:  '$(GOPATH)/bin' # Go binaries path
-  GOROOT: '/usr/local/go1.13' # Go installation path
+  GOROOT: '/usr/local/go1.14' # Go installation path
   GOPATH: '$(system.defaultWorkingDirectory)/gopath' # Go workspace path
   modulePath: '$(GOPATH)/src/github.com/$(build.repository.name)' # Path to the module's code
   GO111MODULE: 'on'
   DOCKER_BUILDKIT: 1
   TSTAMP: $[format('{0:yyyyMMdd}', pipeline.startTime)]
   imageName: 'bihe/login-go'
-  RUNTIME: 'go1.13'
 
 steps:
 
@@ -23,7 +22,7 @@ steps:
 # Find in cache or download a specific version of Go and add it to the PATH
 - task: GoTool@0
   inputs:
-    version: '1.13'
+    version: '1.14'
 
 - script: |
     mkdir -p '$(GOBIN)'
@@ -84,7 +83,6 @@ steps:
       $(Build.SourceBranchName)
     arguments: |
       --build-arg buildtime_variable_version=$(buildtime_variable_version)
-      --build-arg buildtime_variable_runtime=$(RUNTIME)
       --build-arg buildtime_variable_timestamp=$(TSTAMP)
       --build-arg buildtime_variable_commit=$(buildtime_variable_commit)
 

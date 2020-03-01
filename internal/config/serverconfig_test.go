@@ -43,7 +43,14 @@ const configString = `{
 		"secure": true,
 		"prefix": "prefix"
 	},
-	"startUrl": "http://url"
+	"cors": {
+		"origins": ["*"],
+		"methods": ["GET", "POST"],
+		"headers": ["Accept", "Authorization"],
+		"credentials": true,
+		"maxAge": 500
+	},
+	"environment": "Development"
 }`
 
 // TestConfigReader reads config settings from json
@@ -82,5 +89,11 @@ func TestConfigReader(t *testing.T) {
 	assert.Equal(t, "prefix", config.AppCookies.Prefix)
 	assert.Equal(t, true, config.AppCookies.Secure)
 
-	assert.Equal(t, "http://url", config.StartURL)
+	assert.Equal(t, "Development", config.Environment)
+
+	assert.Equal(t, 500, config.Cors.MaxAge)
+	assert.Equal(t, true, config.Cors.AllowCredentials)
+	assert.Equal(t, []string{"Accept", "Authorization"}, config.Cors.AllowedHeaders)
+	assert.Equal(t, []string{"GET", "POST"}, config.Cors.AllowedMethods)
+	assert.Equal(t, []string{"*"}, config.Cors.AllowedOrigins)
 }
