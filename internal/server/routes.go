@@ -63,5 +63,7 @@ func (s *Server) routes() {
 		// swagger
 		handler.ServeStaticDir(r, "/swagger", http.Dir(filepath.Join(s.basePath, "./web/assets/swagger")))
 	})
+
+	r.Get("/", s.api.Call(s.api.HandleError))
 	s.router = r
 }
