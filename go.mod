@@ -7,7 +7,7 @@ require (
 	github.com/bihe/commons-go v1.0.11
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/go-chi/chi v4.0.3+incompatible
-	github.com/go-chi/cors v1.0.0
+	github.com/go-chi/cors v1.0.0 // indirect
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/golang/protobuf v1.3.4 // indirect
 	github.com/google/uuid v1.1.1
@@ -17,6 +17,7 @@ require (
 	github.com/lib/pq v1.1.1 // indirect
 	github.com/mattn/go-sqlite3 v2.0.1+incompatible // indirect
 	github.com/pquerna/cachecontrol v0.0.0-20180517163645-1555304b9b35 // indirect
+	github.com/rs/cors v1.7.0
 	github.com/sirupsen/logrus v1.4.2
 	github.com/stretchr/testify v1.4.0
 	github.com/wangii/emoji v0.0.0-20150519084846-d15b69a4831e
