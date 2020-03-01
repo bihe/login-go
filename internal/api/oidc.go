@@ -344,16 +344,7 @@ func (a *loginAPI) HandleLogout(user security.User, w http.ResponseWriter, r *ht
 	// remove the cookie by expiring it
 	a.setJWTCookie(a.jwt.CookieName, "", -1, w)
 	a.appCookie.Set(errors.FlashKeyInfo, fmt.Sprintf("User '%s' was logged-off!", user.Email), cookieExpiry, w)
-	redirect := a.jwt.LoginRedirect
-	if strings.HasSuffix(redirect, "/") {
-		redirect = strings.TrimSuffix(redirect, "/")
-	}
-	if strings.HasPrefix(errorPath, "/") {
-		redirect = redirect + errorPath
-	} else {
-		redirect = redirect + "/" + errorPath
-	}
-	http.Redirect(w, r, redirect, http.StatusTemporaryRedirect)
+	http.Redirect(w, r, a.jwt.LoginRedirect, http.StatusTemporaryRedirect)
 	return nil
 }
 
